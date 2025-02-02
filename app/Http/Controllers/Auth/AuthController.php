@@ -4,7 +4,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Contracts\Auth\Guard;
 use Illuminate\Contracts\Auth\Registrar;
 use Illuminate\Foundation\Auth\AuthenticatesAndRegistersUsers;
-
+use Illuminate\Http\Request;
 class AuthController extends Controller {
 
 	/*
@@ -34,5 +34,51 @@ class AuthController extends Controller {
 
 		$this->middleware('guest', ['except' => 'getLogout']);
 	}
+
+	public function postLogin(Request $request)
+    {
+        // $this->validate($request, [
+        //     'name' => 'required|name', 'password' => 'required',
+        // ]);
+
+        $credentials = $request->only('name', 'password');
+
+        if ($this->auth->attempt($credentials, $request->has('remember')))
+        {
+            return $this->handleUserWasAuthenticated($request);
+        }
+
+        return redirect($this->loginPath())
+                    ->withInput($request->only('name', 'remember'))
+                    ->withErrors([
+                        'name' => $this->getFailedLoginMessage(),
+                    ]);
+    }
+
+	protected function handleUserWasAuthenticated(Request $request)
+    {
+        $user = $this->auth->user();
+
+        if ($user->role == 'pc') {
+            return redirect()->intended('/pc/index');
+        } elseif ($user->role == 'teacher') {
+            return redirect()->intended('/teacher/index');
+        }
+		elseif ($user->role == 'dean') {
+            return redirect()->intended('/dean/index');
+        }
+		elseif ($user->role == 'school_president') {
+            return redirect()->intended('/school_president/index');
+        }
+		elseif ($user->role == 'finance') {
+            return redirect()->intended('/finance/index');
+        }
+        elseif ($user->role == 'admin') {
+            return redirect()->intended('/admin/index');
+        }
+
+
+        return redirect()->intended($this->redirectPath());
+    }
 
 }
