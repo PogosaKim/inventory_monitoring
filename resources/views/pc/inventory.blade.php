@@ -42,7 +42,7 @@
 			</a>
 		</div>
 
-		@include('pc_sidebar');
+		@include('pc_sidebar')
 
 	</nav>
 

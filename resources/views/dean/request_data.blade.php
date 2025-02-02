@@ -42,7 +42,7 @@
 			</a>
 		</div>
 
-		@include('pc_sidebar');
+		@include('dean_sidebar');
 
 	</nav>
 
@@ -58,7 +58,7 @@
 			<ul class="navbar-nav navbar-nav-icons ms-auto flex-row align-items-center">
 				<li class="nav-item">
                     @if (Auth::check())
-                        <p class="dropdown-item">Hi Property Custodian, {{ Auth::user()->name }}</p>
+                        <p class="dropdown-item">Hi Dean, {{ Auth::user()->name }}</p>
                     @endif
 					<div class="theme-control-toggle fa-icon-wait px-2"><input
 							class="form-check-input ms-0 theme-control-toggle-input" id="themeControlToggle"
@@ -130,16 +130,29 @@
 		</script>
 
 		<input type="hidden" name="_token" value="{{{ csrf_token() }}}" />
-
-		    <div class="card mb-3">
+          <div class="card">
             <div class="card-body">
-              <div class="row flex-between-center">
-                <div class="col-md">
-                  <h5 class="mb-2 mb-md-0">Welcome Back Property Custodian!</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Request</h5>
                 </div>
-              </div>
+                <table id="requestTable" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Requested By</th>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                   
+                    </tbody>
+                </table>
             </div>
-          </div>
+        </div>
+
 
        
 
@@ -157,9 +170,9 @@
  var oTable;
 $(document).ready(function() {
   
-    oTable = $("#studentTable").DataTable({
+  oTable = $("#requestTable").DataTable({
         ajax: {
-            url: "{{ url('admin/student_pds') }}",
+            url: "{{ url('dean/get_request') }}",
             type: "GET",
             data: function(d) { 
             },
@@ -169,15 +182,26 @@ $(document).ready(function() {
             {
                 data: 'name'
             },
+            {
+                data: 'item'
+            },
+            {
+                data: 'quantity'
+            },
+            {
+                data: 'date'
+            },
+            {
+                data: 'status'
+            },
+            {
+                data: 'action'
+            },
+
+
             ],
            
         });
-      	oTable.on("click", ".viewDetail", function() {
-        const person_id = $(this).data("person_id");
-        const url = "{{ url('admin/student_profile') }}?person_id="+person_id;
-        window.open(url);
-      });
-
 });
 
 </script>

@@ -70,6 +70,16 @@ Route::get('pc/get_inventory','PropertyCustodian@GetInventory');
 Route::post('pc/update_inventory','PropertyCustodian@InventoryUpdate');
 Route::post('pc/destroy','PropertyCustodian@destroy');
 
+// Teacher
+
+Route::get('teacher/request','Teacher@request');
+Route::post('teacher/create_request','Teacher@Createrequest');
+
+
+// Dean
+Route::get('dean/request_data','Dean@GetData');
+Route::get('dean/get_request','Dean@GetRequest');
+
 
 
 
