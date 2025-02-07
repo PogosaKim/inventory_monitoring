@@ -65,6 +65,9 @@ Route::get('/admin/index', [
 //Property Custodian
 
 Route::get('pc/inventory','PropertyCustodian@inventory');
+Route::get('pc/release_data','PropertyCustodian@GetReleaseData');
+Route::get('pc/for_release_data','PropertyCustodian@GetForReleaseData');
+Route::post('pc/approved_supplies','PropertyCustodian@GetApprovedRequest');
 Route::post('pc/create_inventory','PropertyCustodian@InventoryCreate');
 Route::get('pc/get_inventory','PropertyCustodian@GetInventory');
 Route::post('pc/update_inventory','PropertyCustodian@InventoryUpdate');
@@ -79,7 +82,20 @@ Route::post('teacher/create_request','Teacher@Createrequest');
 // Dean
 Route::get('dean/request_data','Dean@GetData');
 Route::get('dean/get_request','Dean@GetRequest');
+Route::post('dean/approved_supplies','Dean@GetApprovedRequest');
 
 
+// President 
+
+Route::get('president/request_data','SchoolPresident@GetData');
+Route::get('president/get_request','SchoolPresident@GetRequest');
+Route::post('president/approved_supplies','SchoolPresident@GetApprovedRequest');
+
+
+// Finance 
+
+Route::get('finance/request_data','Finance@GetData');
+Route::get('finance/get_request','Finance@GetRequest');
+Route::post('finance/approved_supplies','Finance@GetApprovedRequest');
 
 

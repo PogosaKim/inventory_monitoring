@@ -42,7 +42,7 @@
 			</a>
 		</div>
 
-		@include('president_sidebar');
+		@include('pc_sidebar');
 
 	</nav>
 
@@ -58,7 +58,7 @@
 			<ul class="navbar-nav navbar-nav-icons ms-auto flex-row align-items-center">
 				<li class="nav-item">
                     @if (Auth::check())
-                        <p class="dropdown-item">Hi President, {{ Auth::user()->name }}</p>
+                        <p class="dropdown-item">Hi Custodian, {{ Auth::user()->name }}</p>
                     @endif
 					<div class="theme-control-toggle fa-icon-wait px-2"><input
 							class="form-check-input ms-0 theme-control-toggle-input" id="themeControlToggle"
@@ -130,16 +130,36 @@
 		</script>
 
 		<input type="hidden" name="_token" value="{{{ csrf_token() }}}" />
-
-		    <div class="card mb-3">
+          <div class="card">
             <div class="card-body">
-              <div class="row flex-between-center">
-                <div class="col-md">
-                  <h5 class="mb-2 mb-md-0">Welcome Back President!</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Request</h5>
                 </div>
-              </div>
+                <table id="requestTable" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Requested By</th>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                   
+                    </tbody>
+                </table>
             </div>
-          </div>
+        </div>
+
+
+       
+
+
+        
+          
+		  
 
 
 
@@ -150,6 +170,91 @@
  var oTable;
 $(document).ready(function() {
   
+  oTable = $("#requestTable").DataTable({
+      ajax: {
+          url: "{{ url('pc/for_release_data') }}",
+          type: "GET",
+          data: function(d) { 
+          },
+          dataSrc: "",
+      },
+      columns: [
+          {
+              data: 'requested_by'
+          },
+          {
+              data: 'item'
+          },
+          {
+              data: 'quantity'
+          },
+          {
+              data: 'date'
+          },
+          {
+              data: 'status'
+          },
+          {
+              data: 'action'
+          },
+
+
+          ],
+          
+      });
+
+      oTable.on("click", ".approvedBtn", function() {
+        const request_supplies_id = $(this).data("request_supplies_id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "To approve this request",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, approve it!"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{{ url('pc/approved_supplies') }}",
+                    type: "POST",
+                    data: {
+                        request_supplies_id: request_supplies_id,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Approved!',
+                                text: response.message || 'Request Supplies Approved successfully!',
+                            }).then(() => {
+                                oTable.ajax.reload(); 
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'Failed to approve Request Supplies. Please try again.',
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMessage,
+                        });
+                        console.log(xhr.responseText);
+                    }
+                });
+            }
+        });
+    });
+
+
 
 });
 

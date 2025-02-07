@@ -171,37 +171,92 @@
 $(document).ready(function() {
   
   oTable = $("#requestTable").DataTable({
-        ajax: {
-            url: "{{ url('dean/get_request') }}",
-            type: "GET",
-            data: function(d) { 
-            },
-            dataSrc: "",
-        },
-        columns: [
-            {
-                data: 'name'
-            },
-            {
-                data: 'item'
-            },
-            {
-                data: 'quantity'
-            },
-            {
-                data: 'date'
-            },
-            {
-                data: 'status'
-            },
-            {
-                data: 'action'
-            },
+      ajax: {
+          url: "{{ url('dean/get_request') }}",
+          type: "GET",
+          data: function(d) { 
+          },
+          dataSrc: "",
+      },
+      columns: [
+          {
+              data: 'name'
+          },
+          {
+              data: 'item'
+          },
+          {
+              data: 'quantity'
+          },
+          {
+              data: 'date'
+          },
+          {
+              data: 'status'
+          },
+          {
+              data: 'action'
+          },
 
 
-            ],
-           
+          ],
+          
+      });
+
+
+      oTable.on("click", ".approvedBtn", function() {
+            const request_supplies_id = $(this).data("request_supplies_id");
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: "To Approved this request",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, approved it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('dean/approved_supplies') }}",
+                        type: "POST",
+                        data: {
+                          request_supplies_id: request_supplies_id,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Approved!',
+                                    text: 'Request Supplies Approved successfully!',
+                                }).then(() => {
+                                    oTable.ajax.reload(); 
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: response.message || 'Failed to Request Supplies. Please try again.',
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: errorMessage,
+                            });
+                            console.log(xhr.responseText);
+                        }
+                    });
+                }
+            });
         });
+
+
+
 });
 
 </script>

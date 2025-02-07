@@ -151,12 +151,15 @@
                 <table id="inventoryTable" class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>Item</th>
-                            <th>Description</th>
-                            <th>Quantity</th>
-                            <th>Unit</th>
-                            <th>Date Purchase</th>
-                            <th>Action</th>
+                            <th>ITEM</th>
+                            <th>BRAND</th>
+                            <th>DESCRIPTION / TYPE</th>
+                            <th>AMOUNT </th>
+                            <th>QUANTITY</th>
+                            <th>UNIT</th>
+                            <th>TOTAL AMOUNT</th>
+                            <th>LOCATION</th>
+                            <th>ACTION</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -168,9 +171,8 @@
 
 
 
-
         <div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg"> <!-- Large modal -->
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="addItemModalLabel">Add New Item</h5>
@@ -179,6 +181,7 @@
                     <div class="modal-body">
                         <form id="addInventory">
                             <input type="hidden" name="_token" value="{{{ csrf_token() }}}" />
+                            
                             <div class="mb-3">
                                 <label for="itemName" class="form-label">Item Name</label>
                                 <select name="inv_name_id" id="inv_name_id" class="form-control">
@@ -188,18 +191,58 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label for="unit" class="form-label">Unit</label>
-                                <input type="text" class="form-control" name="inv_unit" id="inv_unit" required>
+        
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="brand" class="form-label">Brand</label>
+                                        <input type="text" class="form-control" name="inv_brand" id="inv_brand" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="quantity" class="form-label">Description / Type</label>
+                                        <input type="text" class="form-control" name="inv_desc" id="inv_desc">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="quantity" class="form-label">Quantity</label>
-                                <input type="number" class="form-control" name="inv_quantity" id="inv_quantity" required>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="unit" class="form-label">Amount</label>
+                                        <input type="number" class="form-control" name="inv_amount" id="inv_amount" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="md-3">
+                                        <label for="quantity" class="form-label">Quantity</label>
+                                        <input type="number" class="form-control" name="inv_quantity" id="inv_quantity" min="1" required>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="datePurchase" class="form-label">Date Purchase</label>
-                                <input type="date" class="form-control" name="date_purchase" id="date_purchase" required>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="unit" class="form-label">Unit</label>
+                                        <input type="text" class="form-control" name="inv_unit" id="inv_unit" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="div-md-3">
+                                        <label for="datePurchase" class="form-label">Total Amount</label>
+                                        <input type="number" class="form-control" name="inv_total_amount" id="inv_total_amount" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="div-md-3">
+                                        <label for="datePurchase" class="form-label">Location</label>
+                                        <input type="text" class="form-control" name="inv_location" id="inv_location" required>
+                                    </div>
+                                </div>
                             </div>
+        
+
                             <button type="button" class="btn btn-primary px-4" id="submit">
                                 <span class="fa fa-save"></span> Save
                             </button>
@@ -208,20 +251,20 @@
                 </div>
             </div>
         </div>
-
-
         
+
         <div class="modal fade" id="updateItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="addItemModalLabel">Add New Item</h5>
+                        <h5 class="modal-title" id="addItemModalLabel">Update Item</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form id="updateInventory">
                             <input type="hidden" name="id" id="id" value="" />
                             <input type="hidden" name="_token" value="{{ csrf_token() }}" />
+        
                             <div class="mb-3">
                                 <label for="itemName" class="form-label">Item Name</label>
                                 <select name="inv_name_id" id="inv_name_id" class="form-control">
@@ -231,26 +274,68 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="mb-3">
-                                <label for="unit" class="form-label">Unit</label>
-                                <input type="text" class="form-control" name="inv_unit" id="inv_unit" required>
+        
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="brand" class="form-label">Brand</label>
+                                        <input type="text" class="form-control" name="inv_brand" id="inv_brand" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="quantity" class="form-label">Description / Type</label>
+                                        <input type="text" class="form-control" name="inv_desc" id="inv_desc">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="quantity" class="form-label">Quantity</label>
-                                <input type="number" class="form-control" name="inv_quantity" id="inv_quantity" required>
+        
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="unit" class="form-label">Amount</label>
+                                        <input type="number" class="form-control" name="inv_amount" id="inv_amount_update" min="1" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="quantity" class="form-label">Quantity</label>
+                                        <input type="number" class="form-control" name="inv_quantity" id="inv_quantity_update" min="1" required>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mb-3">
-                                <label for="datePurchase" class="form-label">Date Purchase</label>
-                                <input type="date" class="form-control" name="date_purchase" id="date_purchase" required>
+        
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="unit" class="form-label">Unit</label>
+                                        <input type="text" class="form-control" name="inv_unit" id="inv_unit" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="mb-3">
+                                        <label for="datePurchase" class="form-label">Total Amount</label>
+                                        <input type="number" class="form-control" name="inv_total_amount" id="inv_total_amount_update" readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="datePurchase" class="form-label">Location</label>
+                                        <input type="text" class="form-control" name="inv_location" id="inv_location" required>
+                                    </div>
+                                </div>
                             </div>
+        
                             <button type="button" class="btn btn-primary px-4" id="updateSubmit">
-                                <span class="fa fa-save"></span> Apply Changes
+                                <span class="fa fa-save"></span> Save
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
+        
+        
         
         
 
@@ -272,6 +357,29 @@
 <script>
  var oTable;
 $(document).ready(function() {
+
+    function calculateTotalAmount() {
+        let amount = parseFloat(document.getElementById('inv_amount').value) || 0;
+        let quantity = parseFloat(document.getElementById('inv_quantity').value) || 0;
+        let totalAmount = amount * quantity;
+
+        document.getElementById('inv_total_amount').value = totalAmount.toFixed(2); 
+    }
+
+    document.getElementById('inv_amount').addEventListener('input', calculateTotalAmount);
+    document.getElementById('inv_quantity').addEventListener('input', calculateTotalAmount);
+
+
+    function calculateTotalAmountUpdate() {
+    let amount = parseFloat(document.getElementById('inv_amount_update').value) || 0;
+    let quantity = parseFloat(document.getElementById('inv_quantity_update').value) || 0;
+    let totalAmount = amount * quantity;
+
+        document.getElementById('inv_total_amount_update').value = totalAmount.toFixed(2);
+    }
+
+    document.getElementById('inv_amount_update').addEventListener('input', calculateTotalAmountUpdate);
+    document.getElementById('inv_quantity_update').addEventListener('input', calculateTotalAmountUpdate);
   
     oTable = $("#inventoryTable").DataTable({
         ajax: {
@@ -286,7 +394,13 @@ $(document).ready(function() {
                 data: 'name'
             },
             {
-                data: 'description'
+                data: 'inv_brand'
+            },
+            {
+                data: 'inv_desc'
+            },
+            {
+                data: 'inv_amount'
             },
             {
                 data: 'inv_quantity'
@@ -295,7 +409,10 @@ $(document).ready(function() {
                 data: 'inv_unit'
             },
             {
-                data: 'date_purchase'
+                data: 'inv_total_amount'
+            },
+            {
+                data: 'inv_location'
             },
             {
                 data: 'action'
@@ -310,20 +427,25 @@ $(document).ready(function() {
     //     window.open(url);
     //   });
 
-    $("#updateItemModal").on("shown.bs.modal", function(e) {
+            $("#updateItemModal").on("shown.bs.modal", function(e) {
             const button = $(e.relatedTarget);
-            var inventory_list = button.data("inventory_list"); 
+            var inventory_list = button.data("inventory_list");
 
             if (inventory_list !== undefined) {
-                inventory_list = JSON.parse(atob(inventory_list)); 
-                $("#updateInventory").find("#id").val(inventory_list.inventory_id); 
+                inventory_list = JSON.parse(atob(inventory_list));
+
+                $("#updateInventory").find("#id").val(inventory_list.inventory_id);
                 $("#updateInventory").find("#inv_name_id").val(inventory_list.inv_name_id);
                 $("#updateInventory").find("#inv_unit").val(inventory_list.inv_unit);
-                $("#updateInventory").find("#inv_quantity").val(inventory_list.inv_quantity);
-                $("#updateInventory").find("#date_purchase").val(inventory_list.date_purchase).trigger("change");
+                $("#updateInventory").find("#inv_quantity_update").val(inventory_list.inv_quantity);
+                $("#updateInventory").find("#inv_brand").val(inventory_list.inv_brand);
+                $("#updateInventory").find("#inv_desc").val(inventory_list.inv_desc);
+                $("#updateInventory").find("#inv_amount_update").val(inventory_list.inv_amount);
+                $("#updateInventory").find("#inv_total_amount_update").val(inventory_list.inv_total_amount);
+                $("#updateInventory").find("#inv_location").val(inventory_list.inv_location);
+                calculateTotalAmountUpdate();
             }
         });
-
 
 
         $('#submit').on('click', function(e) {

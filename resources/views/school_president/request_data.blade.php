@@ -130,16 +130,37 @@
 		</script>
 
 		<input type="hidden" name="_token" value="{{{ csrf_token() }}}" />
-
-		    <div class="card mb-3">
+          <div class="card">
             <div class="card-body">
-              <div class="row flex-between-center">
-                <div class="col-md">
-                  <h5 class="mb-2 mb-md-0">Welcome Back President!</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">Request</h5>
                 </div>
-              </div>
+                <table id="requestTable" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Approved By</th>
+                            <th>Requested By</th>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                   
+                    </tbody>
+                </table>
             </div>
-          </div>
+        </div>
+
+
+       
+
+
+        
+          
+		  
 
 
 
@@ -150,6 +171,95 @@
  var oTable;
 $(document).ready(function() {
   
+  oTable = $("#requestTable").DataTable({
+      ajax: {
+          url: "{{ url('president/get_request') }}",
+          type: "GET",
+          data: function(d) { 
+          },
+          dataSrc: "",
+      },
+      columns: [
+          {
+              data: 'approved_by'
+          },
+          {
+              data: 'requested_by'
+          },
+          {
+              data: 'item'
+          },
+          {
+              data: 'quantity'
+          },
+          {
+              data: 'date'
+          },
+          {
+              data: 'status'
+          },
+          {
+              data: 'action'
+          },
+
+
+          ],
+          
+      });
+
+
+      oTable.on("click", ".approvedBtn", function() {
+            const request_supplies_id = $(this).data("request_supplies_id");
+
+            Swal.fire({
+                title: "Are you sure?",
+                text: "To Approved this request",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Yes, approved it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ url('president/approved_supplies') }}",
+                        type: "POST",
+                        data: {
+                          request_supplies_id: request_supplies_id,
+                            _token: "{{ csrf_token() }}"
+                        },
+                        success: function(response) {
+                            if (response.status === 'success') {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Approved!',
+                                    text: 'Request Supplies Approved successfully!',
+                                }).then(() => {
+                                    oTable.ajax.reload(); 
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error',
+                                    text: response.message || 'Failed to Request Supplies. Please try again.',
+                                });
+                            }
+                        },
+                        error: function(xhr) {
+                            let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: errorMessage,
+                            });
+                            console.log(xhr.responseText);
+                        }
+                    });
+                }
+            });
+        });
+
+
 
 });
 
