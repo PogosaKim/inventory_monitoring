@@ -140,7 +140,7 @@ class PropertyCustodian extends Controller {
 			->join('person as request_person', 'request_user.person_id', '=', 'request_person.id')
 			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
-			->whereIn('request_supplies.action_type', [4,5])
+			->whereIn('request_supplies.action_type', [4,5,6])
 			->select(
 				'request_supplies.id',
 				'request_person.first_name as requested_first_name',
@@ -158,18 +158,28 @@ class PropertyCustodian extends Controller {
 			->get();
 
 		$datatable = $get_request_supplies->map(function ($request) {
-			$statusText = $request->action_type == 4 ? 'For Release' : ($request->action_type == 5 ? 'For Pick Up' : '');
-			$statusBadgeClass = $request->action_type == 4 ? 'badge-soft-warning' : ($request->action_type == 5 ? 'badge-soft-success' : 'badge-soft-secondary');
+			$statusText = ($request->action_type == 4) ? 'For Release' :
+			(($request->action_type == 5) ? 'For Pick Up' :
+			(($request->action_type == 6) ? 'Done Release' : ''));
 
-			$approveButton = ($request->action_type == 5)
-				? '<button type="button" class="btn btn-success btn-sm text-white" disabled style="margin: 4px;">
-					<span class="fa fa-check"></span> For Pick Up
-				</button>'
-				: '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
-					data-request_supplies_id="' . $request->id . '" 
-					style="margin: 4px;">
-					<span class="fa fa-check"></span> Approve
-				</a>';
+			$statusBadgeClass = ($request->action_type == 4) ? 'badge-soft-warning' :
+							(($request->action_type == 5) ? 'badge-soft-success' :
+							(($request->action_type == 6) ? 'badge-soft-primary' : 'badge-soft-secondary')) ;
+
+			$approveButton = ($request->action_type == 5) ? 
+			'<button type="button" class="btn btn-success btn-sm text-white forReleaseBtn" data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+				<span class="fa fa-check"></span> For Pick Up
+			</button>' :
+			(($request->action_type == 6) ?
+			'<button type="button" class="btn btn-primary btn-sm text-white" disabled  style="margin: 4px;>
+				<span class="fa fa-check"></span> Done Release
+			</button>' :
+			'<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
+				data-request_supplies_id="' . $request->id . '" 
+				style="margin: 4px;">
+				<span class="fa fa-check"></span> Approve
+			</a>');
+
 
 			$requestedBy = strtoupper(trim(
 				$request->requested_first_name . ' ' . 
@@ -267,6 +277,47 @@ class PropertyCustodian extends Controller {
         ]);
     }
 }
+
+public function ForReleaseRequest(Request $request)
+	{
+		try {
+			$gen_user = Auth::id();
+			$user = User::find($gen_user);
+	
+			if (!$user) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'User not found.'
+				]);
+			}
+	
+			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+	
+			if (!$get_request_supplies) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Request Supplies not found.'
+				]);
+			}
+			$get_request_supplies->action_type = 6;
+			$get_request_supplies->release_date = Carbon::now(); 
+			$get_request_supplies->save();
+	
+			return response()->json([
+				'status' => 'success',
+				'message' => 'Request Supplies Approved successfully.'
+			]);
+	
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'failed',
+				'message' => 'An error occurred while approving the request.',
+				'error' => $e->getMessage(),
+				'line' => $e->getLine()
+			]);
+		}
+	}
+
 
 	
 

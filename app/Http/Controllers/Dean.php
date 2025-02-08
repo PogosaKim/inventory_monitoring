@@ -1,8 +1,12 @@
 <?php namespace App\Http\Controllers;
 
+use App\Dean as AppDean;
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
+use App\Inventory;
+use App\Person;
 use App\RequestSupplies;
+use App\Roles;
 use App\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -22,6 +26,39 @@ class Dean extends Controller {
 	public function GetData()
 	{
 		return view('dean.request_data');
+	}
+
+	public function request()
+	{
+		$gen_user = Auth::user()->person_id;
+
+		$person = Person::find($gen_user);
+		// dd($gen_user);
+	
+		$dean = AppDean::where('person_id', $gen_user)
+						  ->join('school_department','dean.school_department_id','=','school_department.id')
+						  ->select('dean.id as dean_id','school_department.name','school_department.suffix','school_department.id as school_department_id')
+						  ->first();
+		// dd($dean);
+	
+		if ($dean) {
+			$role = Roles::where('id', 5)
+             ->select('id', 'name')
+             ->first();
+		}
+		// dd($role);
+
+
+
+		$inventory_list = Inventory::join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+		->select('inventory.id as inventory_id', 'inventory_name.name', 'inventory_name.description', 'inventory.inv_unit', 'inventory.inv_quantity')
+		->where('inventory.inv_quantity', '!=', 0)
+		->get();
+		// dd($inventory_list);
+	
+	
+	
+		return view('dean.request',compact('role','dean','person','inventory_list'));
 	}
 	
 
@@ -111,6 +148,62 @@ class Dean extends Controller {
         ]);
     }
 }
+
+public function Createrequest()
+{
+	$user_role_id = \Request::get('user_role_id');
+	$date = \Request::get('date');
+	$school_department_id = \Request::get('school_department_id');
+	$inventory_ids = \Request::get('inventory_id');
+	$request_quantities = \Request::get('request_quantity');
+	
+	try {
+		foreach ($inventory_ids as $index => $inventoryId) {
+			RequestSupplies::create([
+				'inventory_id' => $inventoryId,  
+				'requested_by' => Auth::user()->id,
+				'user_role_id' => $user_role_id,
+				'school_department_id' => $school_department_id,
+				'date' => $date,
+				'request_quantity' => $request_quantities[$index],
+				'action_type' => 2
+			]);
+		}
+
+		\DB::commit();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Request submitted successfully!',
+		]);
+
+	} catch (\Exception $e) {
+		\DB::rollBack();
+
+		return response()->json([
+			'success' => false,
+			'message' => 'Failed to submit the request. Please try again.',
+			'error' => $e->getMessage(),
+		]);
+	}
+}
+
+	public function GetTrackingRequest()
+	{
+		$gen_user = Auth::user()->id;
+		$person = Person::find($gen_user);
+		// dd($gen_user);
+		$my_request_supplies = RequestSupplies::where('request_supplies.requested_by', $gen_user)
+			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->select('inventory_name.name', 'inventory.inv_unit', 'request_supplies.request_quantity', 'inventory.inv_brand', 'request_supplies.action_type')
+			->get();
+		// dd($my_request_supplies);
+
+		return view('dean.track_request', compact('my_request_supplies'));
+	}
+
+
 
 
 	/**

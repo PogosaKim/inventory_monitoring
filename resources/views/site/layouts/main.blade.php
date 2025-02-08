@@ -47,6 +47,9 @@
     <link href="{{asset('vendors/flatpicker/flatpickr.min.css')}}"  rel="stylesheet">
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="{{asset('vendors/fontawesome/all.min.css')}}" rel="stylesheet">
+
     {{-- <link rel="stylesheet" href="iziToast.min.css"/> --}}
 
 
