@@ -73,12 +73,13 @@ Route::post('pc/create_inventory','PropertyCustodian@InventoryCreate');
 Route::get('pc/get_inventory','PropertyCustodian@GetInventory');
 Route::post('pc/update_inventory','PropertyCustodian@InventoryUpdate');
 Route::post('pc/destroy','PropertyCustodian@destroy');
-
+Route::get('pc/pc/check_status_request','PropertyCustodian@CheckedStatusRequestData');
 // Teacher
 
 Route::get('teacher/request','Teacher@request');
 Route::post('teacher/create_request','Teacher@Createrequest');
 Route::get('teacher/track_request','Teacher@GetTrackingRequest');
+Route::get('teacher/teacher/check_status','Teacher@CheckedStatusRequest');
 
 
 
@@ -89,6 +90,8 @@ Route::post('dean/approved_supplies','Dean@GetApprovedRequest');
 Route::get('dean/request','Dean@request');
 Route::post('dean/create_request','Dean@Createrequest');
 Route::get('dean/track_request','Dean@GetTrackingRequest');
+Route::get('dean/dean/check_status','Dean@CheckedStatusRequest');
+Route::get('dean/dean/check_status_request','Dean@CheckedStatusRequestData');
 
 
 
@@ -97,6 +100,7 @@ Route::get('dean/track_request','Dean@GetTrackingRequest');
 Route::get('president/request_data','SchoolPresident@GetData');
 Route::get('president/get_request','SchoolPresident@GetRequest');
 Route::post('president/approved_supplies','SchoolPresident@GetApprovedRequest');
+Route::get('school_president/president/check_status_request','SchoolPresident@CheckedStatusRequestData');
 
 
 // Finance 
@@ -104,5 +108,6 @@ Route::post('president/approved_supplies','SchoolPresident@GetApprovedRequest');
 Route::get('finance/request_data','Finance@GetData');
 Route::get('finance/get_request','Finance@GetRequest');
 Route::post('finance/approved_supplies','Finance@GetApprovedRequest');
+Route::get('finance/finance/check_status_request','Finance@CheckedStatusRequestData');
 
 

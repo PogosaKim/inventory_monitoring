@@ -92,6 +92,20 @@ class PropertyCustodian extends Controller {
 		return response()->json($datatable);
 	}
 
+	public function CheckedStatusRequestData()
+	{
+		$check_status_request_data = RequestSupplies::where('request_supplies.action_type', 4)
+			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->select('request_supplies.action_type', 'inventory_name.name as item_name') 
+			->get();
+
+		return response()->json([
+			'check_status_request' => $check_status_request_data,
+		]);
+	}
+
+
 	public function InventoryUpdate(Request $request)
 	{
 		
@@ -154,7 +168,7 @@ class PropertyCustodian extends Controller {
 				'request_supplies.date',
 				'request_supplies.action_type'
 			)
-			->orderBy('request_supplies.date', 'asc')
+			->orderBy('request_supplies.updated_at','desc')
 			->get();
 
 		$datatable = $get_request_supplies->map(function ($request) {

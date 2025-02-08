@@ -155,30 +155,33 @@
 @section('scripts')
 <script>
  var oTable;
-$(document).ready(function() {
-  
-    oTable = $("#studentTable").DataTable({
-        ajax: {
-            url: "{{ url('admin/student_pds') }}",
-            type: "GET",
-            data: function(d) { 
-            },
-            dataSrc: "",
-        },
-        columns: [
-            {
-                data: 'name'
-            },
-            ],
-           
-        });
-      	oTable.on("click", ".viewDetail", function() {
-        const person_id = $(this).data("person_id");
-        const url = "{{ url('admin/student_profile') }}?person_id="+person_id;
-        window.open(url);
-      });
-
+ $(document).ready(function() {
+	checkStatusRequest();
 });
+
+function checkStatusRequest() {
+    $.get('pc/check_status_request').then(function(res) {
+        if (res.check_status_request.length !== 0) {
+            $.each(res.check_status_request, function(index, item) {
+                Swal.fire({
+                    title: "New Release Item for Approval",
+                    html: "A Release request for <b>" + item.item_name + "</b> needs your approval.",
+                    icon: 'info',
+                    confirmButtonText: 'Review Now',
+                    showCancelButton: true,
+                    cancelButtonText: 'Later',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+						window.location.href = "{{ url('pc/release_data') }}";
+                    }
+                });
+            });
+        }
+    });
+}
+
+
 
 </script>
 

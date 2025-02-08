@@ -33,7 +33,7 @@
 				{{-- <button class="btn navbar-toggler-humburger-icon navbar-vertical-toggle" data-bs-toggle="tooltip"
 					data-bs-placement="left" title="Toggle Navigation"><span class="navbar-toggle-icon"><span
 							class="toggle-line"></span></span></button> --}}
-			</div><a class="navbar-brand" href="{{URL::to('')}}">
+			</div><a class="navbar-brand" href="{{URL::to('school_president/index')}}">
 				<div class="d-flex align-items-center py-3">
 					<span class="font-sans-serif" style="color:#DE9208; font-size:13px">
          INVENTORY MONITORING
@@ -149,9 +149,31 @@
 <script>
  var oTable;
 $(document).ready(function() {
-  
-
+	checkStatusRequest();
 });
+
+function checkStatusRequest() {
+    $.get('president/check_status_request').then(function(res) {
+        if (res.check_status_request.length !== 0) {
+            $.each(res.check_status_request, function(index, item) {
+                Swal.fire({
+                    title: "New Request for Approval",
+                    html: "A new request for <b>" + item.item_name + "</b> needs your approval.",
+                    icon: 'info',
+                    confirmButtonText: 'Review Now',
+                    showCancelButton: true,
+                    cancelButtonText: 'Later',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+						window.location.href = "{{ url('president/request_data') }}";
+                    }
+                });
+            });
+        }
+    });
+}
+
 
 </script>
 

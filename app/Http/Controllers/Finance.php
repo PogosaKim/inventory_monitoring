@@ -38,7 +38,7 @@ class Finance extends Controller {
 			->join('person as request_person', 'request_user.person_id', '=', 'request_person.id')
 			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
-			->whereIn('request_supplies.action_type', [3,4])
+			->whereIn('request_supplies.action_type', [3, 4 , 5 , 6])
 			->select(
 				'request_supplies.id',
 				'request_person.first_name as requested_first_name',
@@ -52,14 +52,38 @@ class Finance extends Controller {
 				'request_supplies.date',
 				'request_supplies.action_type'
 			)
-			->orderBy('request_supplies.date', 'asc')
+			->orderBy('request_supplies.updated_at','desc')
 			->get();
 
 		$datatable = $get_request_supplies->map(function ($request) {
-			$statusText = $request->action_type == 3 ? 'Waiting For Approval' : ($request->action_type == 4 ? 'For Release' : '');
-			$statusBadgeClass = $request->action_type == 3 ? 'badge-soft-warning' : ($request->action_type == 4 ? 'badge-soft-success' : 'badge-soft-secondary');
+			switch ($request->action_type) {
+				case 2:
+					$statusText = 'Approved By Dean';
+					$statusBadgeClass = 'badge-soft-success';
+					break;
+				case 3:
+					$statusText = 'Approved by President';
+					$statusBadgeClass = 'badge-soft-info';
+					break;
+				case 4:
+					$statusText = 'Approved by Finance';
+					$statusBadgeClass = 'badge-soft-primary';
+					break;
+				case 5:
+					$statusText = 'Approved by Pick Up';
+					$statusBadgeClass = 'badge-soft-dark';
+					break;
+				case 6:
+					$statusText = 'Done Release';
+					$statusBadgeClass = 'badge-soft-success';
+					break;
+				default:
+					$statusText = 'Unknown';
+					$statusBadgeClass = 'badge-soft-secondary';
+					break;
+			}
 
-			$approveButton = ($request->action_type == 4)
+			$approveButton = in_array($request->action_type, [4, 5,6])
 				? '<button type="button" class="btn btn-success btn-sm text-white" disabled style="margin: 4px;">
 					<span class="fa fa-check"></span> For Release
 				</button>'
@@ -93,6 +117,20 @@ class Finance extends Controller {
 
 		return response()->json($datatable);
 	}
+
+	public function CheckedStatusRequestData()
+	{
+		$check_status_request_data = RequestSupplies::where('request_supplies.action_type', 3)
+			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->select('request_supplies.action_type', 'inventory_name.name as item_name') 
+			->get();
+
+		return response()->json([
+			'check_status_request' => $check_status_request_data,
+		]);
+	}
+
 
 	public function GetApprovedRequest(Request $request)
 	{

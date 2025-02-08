@@ -75,14 +75,42 @@ class Dean extends Controller {
 		->where('request_supplies.school_department_id',$user->school_department_id)
 		->where('request_supplies.user_role_id',$user->user_role_id)
 		->select('request_supplies.id','person.first_name','person.last_name','person.middle_name','inventory_name.name','request_supplies.request_quantity','request_supplies.date','request_supplies.action_type')
-		->orderBy('request_supplies.date','asc')
+		->orderBy('request_supplies.updated_at','desc')
 		->get();
 
 
 		$datatable = $get_request_supplies->map(function ($request) {
-			$statusText = $request->action_type == 1 ? 'Pending' : ($request->action_type == 2 ? 'Approved' : '');
-			$statusBadgeClass = $request->action_type == 1 ? 'badge-soft-warning' : ($request->action_type == 2 ? 'badge-soft-success' : 'badge-soft-secondary');
-			$approveButton = ($request->action_type == 2)
+			switch ($request->action_type) {
+				case 1:
+					$statusText = 'Pending';
+					$statusBadgeClass = 'badge-soft-warning';
+					break;
+				case 2:
+					$statusText = 'Approved';
+					$statusBadgeClass = 'badge-soft-success';
+					break;
+				case 3:
+					$statusText = 'Approved by President';
+					$statusBadgeClass = 'badge-soft-info';
+					break;
+				case 4:
+					$statusText = 'Approved by Finance';
+					$statusBadgeClass = 'badge-soft-primary';
+					break;
+				case 5:
+					$statusText = 'Approved by Pick Up';
+					$statusBadgeClass = 'badge-soft-dark';
+					break;
+				case 6:
+					$statusText = 'Done Release';
+					$statusBadgeClass = 'badge-soft-success';
+					break;
+				default:
+					$statusText = 'Unknown';
+					$statusBadgeClass = 'badge-soft-secondary';
+					break;
+			}
+			$approveButton = in_array($request->action_type, [2, 3, 4, 5,6])
             ? '<button type="button" class="btn btn-success btn-sm text-white" disabled 
                 style="margin: 4px;">
                 <span class="fa fa-check"></span> Approved
@@ -201,6 +229,36 @@ public function Createrequest()
 		// dd($my_request_supplies);
 
 		return view('dean.track_request', compact('my_request_supplies'));
+	}
+
+	public function CheckedStatusRequest()
+	{
+		$gen_user = Auth::user()->id;
+		
+		$check_status_request = RequestSupplies::where('request_supplies.requested_by', $gen_user)
+			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->select('request_supplies.action_type', 'inventory_name.name as item_name') 
+			->whereIn('request_supplies.action_type', [2, 3, 4, 5]) 
+			->get();
+	
+		return response()->json(['check_status_request' => $check_status_request]);
+	}
+
+		public function CheckedStatusRequestData()
+	{
+		$gen_user_department = Auth::user()->school_department_id;
+		
+		$check_status_request_data = RequestSupplies::where('request_supplies.school_department_id', $gen_user_department)
+			->where('request_supplies.action_type', 1)
+			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->select('request_supplies.action_type', 'inventory_name.name as item_name') 
+			->get();
+
+		return response()->json([
+			'check_status_request' => $check_status_request_data,
+		]);
 	}
 
 

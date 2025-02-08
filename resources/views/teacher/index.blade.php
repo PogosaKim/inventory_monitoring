@@ -33,7 +33,7 @@
 				{{-- <button class="btn navbar-toggler-humburger-icon navbar-vertical-toggle" data-bs-toggle="tooltip"
 					data-bs-placement="left" title="Toggle Navigation"><span class="navbar-toggle-icon"><span
 							class="toggle-line"></span></span></button> --}}
-			</div><a class="navbar-brand" href="{{URL::to('')}}">
+			</div><a class="navbar-brand" href="{{URL::to('teacher/index')}}">
 				<div class="d-flex align-items-center py-3">
 					<span class="font-sans-serif" style="color:#DE9208; font-size:13px">
          INVENTORY MONITORING
@@ -155,30 +155,55 @@
 @section('scripts')
 <script>
  var oTable;
-$(document).ready(function() {
-  
-    oTable = $("#studentTable").DataTable({
-        ajax: {
-            url: "{{ url('admin/student_pds') }}",
-            type: "GET",
-            data: function(d) { 
-            },
-            dataSrc: "",
-        },
-        columns: [
-            {
-                data: 'name'
-            },
-            ],
-           
-        });
-      	oTable.on("click", ".viewDetail", function() {
-        const person_id = $(this).data("person_id");
-        const url = "{{ url('admin/student_profile') }}?person_id="+person_id;
-        window.open(url);
-      });
-
+ $(document).ready(function() {
+    checkStatus();
+    // setInterval(checkStatus, 10000); // Auto-check every 10 seconds
 });
+var requestDataUrl = "{{ url('teacher/track_request') }}";
+
+function checkStatus() {
+    $.get('teacher/check_status').then(function(res) {
+        if (res.check_status_request.length !== 0) {
+            $.each(res.check_status_request, function(index, item) {
+                let title = "";
+                let message = "Your request has been updated.";
+
+                switch (item.action_type) {
+                    case 2:
+                        title = "Approved by Dean";
+                        message = "Your request has been approved by the Dean.";
+                        break;
+                    case 3:
+                        title = "Approved by President";
+                        message = "Your request has been approved by the President.";
+                        break;
+                    case 4:
+                        title = "Approved by Finance";
+                        message = "Your request has been approved by Finance.";
+                        break;
+                    case 5:
+                        title = "Ready for Pickup";
+                        message = "Your request is ready for pickup.";
+                        break;
+                }
+
+                Swal.fire({
+                    title: title,
+                    html: message,
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = requestDataUrl; 
+                    }
+                });
+            });
+        }
+    });
+}
+
+
 
 </script>
 

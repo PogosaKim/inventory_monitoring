@@ -107,6 +107,24 @@ class Teacher extends Controller {
 	}
 
 
+	public function CheckedStatusRequest()
+	{
+		$gen_user = Auth::user()->id;
+		
+		$check_status_request = RequestSupplies::where('request_supplies.requested_by', $gen_user)
+			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->select('request_supplies.action_type', 'inventory_name.name as item_name') 
+			->whereIn('request_supplies.action_type', [2, 3, 4, 5]) 
+			->get();
+	
+		return response()->json(['check_status_request' => $check_status_request]);
+	}
+	
+
+	
+
+
 
 
 

@@ -33,7 +33,7 @@
 				{{-- <button class="btn navbar-toggler-humburger-icon navbar-vertical-toggle" data-bs-toggle="tooltip"
 					data-bs-placement="left" title="Toggle Navigation"><span class="navbar-toggle-icon"><span
 							class="toggle-line"></span></span></button> --}}
-			</div><a class="navbar-brand" href="{{URL::to('')}}">
+			</div><a class="navbar-brand" href="{{URL::to('dean/index')}}">
 				<div class="d-flex align-items-center py-3">
 					<span class="font-sans-serif" style="color:#DE9208; font-size:13px">
          INVENTORY MONITORING
@@ -148,10 +148,69 @@
 @section('scripts')
 <script>
  var oTable;
-$(document).ready(function() {
-  
-
+ $(document).ready(function() {
+	checkStatusRequest();
+    // setInterval(checkStatus, 10000); // Auto-check every 10 seconds
 });
+
+// function checkStatus() {
+//     $.get('dean/check_status').then(function(res) {
+//         if (res.check_status_request.length !== 0) {
+//             $.each(res.check_status_request, function(index, item) {
+//                 let title = "";
+//                 let message = "Your request has been updated.";
+
+//                 switch (item.action_type) {
+//                     case 3:
+//                         title = "Approved by President";
+//                         message = "Your request has been approved by the President.";
+//                         break;
+//                     case 4:
+//                         title = "Approved by Finance";
+//                         message = "Your request has been approved by Finance.";
+//                         break;
+//                     case 5:
+//                         title = "Ready for Pickup";
+//                         message = "Your request is ready for pickup.";
+//                         break;
+//                 }
+
+//                 Swal.fire({
+//                     title: title,
+//                     html: message,
+//                     icon: 'success',
+//                     confirmButtonText: 'OK',
+//                     timer: 6000, // Auto close after 6 seconds
+//                     showCancelButton: false,
+//                     allowOutsideClick: false
+//                 });
+//             });
+//         }
+//     });
+// }
+
+function checkStatusRequest() {
+    $.get('dean/check_status_request').then(function(res) {
+        if (res.check_status_request.length !== 0) {
+            $.each(res.check_status_request, function(index, item) {
+                Swal.fire({
+                    title: "New Request for Approval",
+                    html: "A new request for <b>" + item.item_name + "</b> needs your approval.",
+                    icon: 'info',
+                    confirmButtonText: 'Review Now',
+                    showCancelButton: true,
+                    cancelButtonText: 'Later',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+						window.location.href = "{{ url('dean/request_data') }}";
+                    }
+                });
+            });
+        }
+    });
+}
+
 
 </script>
 
