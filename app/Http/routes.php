@@ -74,6 +74,8 @@ Route::get('pc/get_inventory','PropertyCustodian@GetInventory');
 Route::post('pc/update_inventory','PropertyCustodian@InventoryUpdate');
 Route::post('pc/destroy','PropertyCustodian@destroy');
 Route::get('pc/pc/check_status_request','PropertyCustodian@CheckedStatusRequestData');
+
+
 // Teacher
 
 Route::get('teacher/request','Teacher@request');

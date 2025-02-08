@@ -1,65 +1,14 @@
-{{-- 
-
-{{-- 
- <div class="container-fluid">
-	<div class="row">
-		<div class="col-md-8 col-md-offset-2">
-			<div class="panel panel-default">
-				<div class="panel-heading">Login</div>
-				<div class="panel-body">
-					@if (count($errors) > 0)
-						<div class="alert alert-danger">
-							<strong>Whoops!</strong> There were some problems with your input.<br><br>
-							<ul>
-								@foreach ($errors->all() as $error)
-									<li>{{ $error }}</li>
-								@endforeach
-							</ul>
-						</div>
-					@endif
-
-					<form class="form-horizontal" role="form" method="POST" action="{{ url('/auth/login') }}">
-						<input type="hidden" name="_token" value="{{ csrf_token() }}">
-
-						<div class="form-group">
-							<label class="col-md-4 control-label">Username</label>
-							<div class="col-md-6">
-								<input type="email" class="form-control" name="email" value="{{ old('email') }}">
-							</div>
-						</div>
-
-						<div class="form-group">
-							<label class="col-md-4 control-label">Password</label>
-							<div class="col-md-6">
-								<input type="password" class="form-control" name="password">
-							</div>
-						</div>
-
-						<div class="form-group">
-							<div class="col-md-6 col-md-offset-4">
-								<div class="checkbox">
-									<label>
-										<input type="checkbox" name="remember"> Remember Me
-									</label>
-								</div>
-							</div>
-						</div>
-
-						<div class="form-group">
-							<div class="col-md-6 col-md-offset-4">
-								<button type="submit" class="btn btn-primary">Login</button>
-
-								<a class="btn btn-link" href="{{ url('/password/email') }}">Forgot Your Password?</a>
-							</div>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-	</div>
-</div>  --}}
 
 <style>
+	body {
+		background-image: url('{{ asset('assets/img/img.jpg') }}');
+		background-size: cover;
+		background-position: center; 
+		background-repeat: no-repeat; 
+		background-attachment: fixed; 
+		min-height: 100vh;
+	}
+
 	.form_container {
 	  width: fit-content;
 	  height: fit-content;
@@ -78,15 +27,18 @@
 	}
 	
 	.logo_container {
-	  box-sizing: border-box;
-	  width: 80px;
-	  height: 80px;
-	  background: linear-gradient(180deg, rgba(248, 248, 248, 0) 50%, #F8F8F888 100%);
-	  border: 1px solid #F7F7F8;
-	  filter: drop-shadow(0px 0.5px 0.5px #EFEFEF) drop-shadow(0px 1px 0.5px rgba(239, 239, 239, 0.5));
-	  border-radius: 11px;
+	box-sizing: border-box;
+	width: 80px;
+	height: 80px;
+	background-image: url('{{asset('assets/img/logo.jpg')}}');
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	border: 1px solid #F7F7F8;
+	filter: drop-shadow(0px 0.5px 0.5px #EFEFEF) drop-shadow(0px 1px 0.5px rgba(239, 239, 239, 0.5));
+	border-radius: 11px;
 	}
-	
+
 	.title_container {
 	  display: flex;
 	  flex-direction: column;
@@ -244,6 +196,19 @@
 	.footer-section .signup-link:hover {
 	  text-decoration: underline;
 	}
+	@media (max-width: 768px) { 
+		body {
+			background-image: none;
+			background-color: #ffffff; 
+		}
+	}
+	@media (max-width: 480px) { 
+		body {
+			background-image: none;
+			background-color: #f5f5f5; 
+		}
+	}
+
 	
 	</style>
 	<div class="center-form">
@@ -286,14 +251,14 @@
 		<span>Login</span>
 	  </button>
 	<!-- Forgot Password and Sign Up Footer -->
-	<div class="footer-section">
+	{{-- <div class="footer-section">
 	  <p class="note" style="font-size: 15px; margin: 0;">
 		Forgot password? <a href="{{ url('reset_password') }}" class="signup-link">Click here</a>
 	  </p>
 	  <p class="note" style="font-size: 15px; margin: 0;">
 		Don't have an account? <a href="{{ url('auth/register') }}" class="signup-link">Sign Up</a>
 	  </p>
-	</div>
+	</div> --}}
 	
 	</form>
 	</div>
