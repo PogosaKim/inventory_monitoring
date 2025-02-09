@@ -204,9 +204,14 @@
                 
                 </div>
         
-                <div class="mb-4">
-                    <p>Requested by: <b>{{ $person->last_name }} , {{ $person->first_name }} {{ $person->middle_name }}</b> </p>
-                    <hr style="width: 15%; border-color: #333;" />
+                <div class="mb-4 text-center">
+                    <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
+                    @if (!empty($person->signature))
+                        <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
+                    @else
+                        <p>No signature available</p>
+                    @endif
+                    <hr style="width: 15%; border-color: #333; margin: 10px auto;">
                 </div>
                 
                 

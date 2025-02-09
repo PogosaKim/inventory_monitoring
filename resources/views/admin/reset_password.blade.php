@@ -131,50 +131,148 @@
 
 		<input type="hidden" name="_token" value="{{{ csrf_token() }}}" />
 
-		    <div class="card mb-3">
+        <div class="card mb-3">
             <div class="card-body">
-              <div class="row flex-between-center">
-                <div class="col-md">
-                  <h5 class="mb-2 mb-md-0">Welcome Back Admin!</h5>
+                <div class="row justify-content-between align-items-center">
+                    <div class="col-md">
+                        <h5 class="mb-2 mb-md-0">Change Password</h5>
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
-
+            <div class="card-body">
+                <div class="center-form">
+                    <div class="form-container active">
+                        <form id="resetForm" autocomplete="off"> 
+                            <input type="hidden" name="_token" value="{{ csrf_token() }}" />
+                            <fieldset>
+                                <h4 class="text-center">Enter Username</h4>
+                                <div class="form-group">
+                                    <label for="user_name" class="form-label">Username</label>
+                                    <input type="text" class="form-control" name="user_name" id="user_name" required>
+                                </div>
+                            </fieldset>
+        
+                            <div class="text-center mt-3">
+                                <button type="button" class="btn btn-success px-4 w-100" id="searchUsername">
+                                    <span class="fa fa-search"></span> Check
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
 
 
 @stop
 
 @section('scripts')
 <script>
- var oTable;
-//  $(document).ready(function() {
-// 	checkStatusRequest();
+$(document).ready(function () {
+    $('#searchUsername').click(function () {
+    const username = $('#user_name').val().trim();
 
-// });
+    if (username === '') {
+        alert('Please enter a username.');
+        return;
+    }
 
+    $.ajax({
+        url: "{{url('find_reset_password')}}",
+        type: 'POST',
+        data: {
+            user_name: username,
+             _token: "{{ csrf_token() }}"
+        },
+        success: function (response) {
+            if (response.success) {
+                let userOptions = '';
 
-// function checkStatusRequest() {
-//     $.get('dean/check_status_request').then(function(res) {
-//         if (res.check_status_request.length !== 0) {
-//             $.each(res.check_status_request, function(index, item) {
-//                 Swal.fire({
-//                     title: "New Request for Approval",
-//                     html: "A new request for <b>" + item.item_name + "</b> needs your approval.",
-//                     icon: 'info',
-//                     confirmButtonText: 'Review Now',
-//                     showCancelButton: true,
-//                     cancelButtonText: 'Later',
-//                     allowOutsideClick: false
-//                 }).then((result) => {
-//                     if (result.isConfirmed) {
-// 						window.location.href = "{{ url('dean/request_data') }}";
-//                     }
-//                 });
-//             });
-//         }
-//     });
-// }
+                response.persons.forEach(person => {
+                    userOptions += `
+                        <tr>
+                            <td>${person.first_name} ${person.last_name}</td>
+                            <td>
+                                <button class="btn btn-primary reset-password-btn" 
+                                        data-user-id="${person.user_id}">
+                                    Reset Password
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                $('#resetForm').html(`
+                    <div class="reset-password-container">
+                        <h4 class="reset-password-title">Select a Person to Reset Password</h4>
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${userOptions}
+                            </tbody>
+                        </table>
+                    </div>
+                `);
+
+                $('.reset-password-btn').click(function () {
+                    const userId = $(this).data('user-id');
+
+                    $('#resetForm').html(`
+                        <div class="reset-password-container">
+                            <h4 class="reset-password-title">Reset Password</h4>
+                            <form id="newPasswordForm" autocomplete="off">
+                                <div class="form-group">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                </div>
+                                <br>
+                                <button type="button" class="btn btn-success w-100" id="submitNewPassword">
+                                    Reset Password
+                                </button>
+                            </form>
+                        </div>
+                    `);
+
+                    $('#submitNewPassword').click(function () {
+                        const newPassword = $('#new_password').val().trim();
+                        if (newPassword === '') {
+                            alert('Please enter a new password.');
+                            return;
+                        }
+
+                        $.ajax({
+                            url: "{{url('update_reset_password')}}",
+                            type: 'POST',
+                            data: {
+                                user_id: userId,
+                                new_password: newPassword,
+                                 _token: "{{ csrf_token() }}"
+                            },
+                            success: function (res) {
+                                if (res.success) {
+                                    alert('Password reset successfully!');
+                                } else {
+                                    alert('Failed to reset password.');
+                                }
+                            }
+                        });
+                    });
+                });
+            } else {
+                alert(response.message);
+            }
+        }
+    });
+});
+
+});
+
 
 
 </script>

@@ -154,7 +154,7 @@
             </div>
         
          
-            <form id=" q" style="margin: 20px;">
+            <form id="teacherRequestForm" style="margin: 20px;">
                 <input type="hidden" name="_token" value="{{ csrf_token() }}" />
                 <div class="d-flex justify-content-between mb-3">
                     <div style="flex-basis: 48%;">Thru:   
@@ -204,10 +204,20 @@
                 
                 </div>
         
-                <div class="mb-4">
-                    <p>Requested by: <b>{{ $person->last_name }} , {{ $person->first_name }} {{ $person->middle_name }}</b> </p>
-                    <hr style="width: 15%; border-color: #333;" />
+                <div class="mb-4 text-center">
+                    <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
+                    @if (!empty($person->signature))
+                        <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
+                    @else
+                        <p>No signature available</p>
+                    @endif
+                    <hr style="width: 15%; border-color: #333; margin: 10px auto;">
                 </div>
+                
+                
+
+               
+                
                 
                 
              
@@ -297,7 +307,7 @@ $(document).ready(function() {
                 return;  
             }
 
-            const formData = new FormData(document.getElementById(' q'));
+            const formData = new FormData(document.getElementById('teacherRequestForm'));
             var btn = $(this);
             var html = $(this).html();
 
