@@ -451,7 +451,7 @@ $(document).ready(function() {
         $('#submit').on('click', function(e) {
             e.preventDefault();
 
-            const formData = new FormData(document.getElementById('addInventory'));
+            const formData = new FormData(document.getElementById('addInventory'));approvedBtn
             var btn = $(this);
             var html = $(this).html();
 

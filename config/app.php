@@ -135,6 +135,7 @@ return [
 		'Illuminate\Translation\TranslationServiceProvider',
 		'Illuminate\Validation\ValidationServiceProvider',
 		'Illuminate\View\ViewServiceProvider',
+		Milon\Barcode\BarcodeServiceProvider::class,
 
 		/*
 		 * Application Service Providers...
@@ -192,6 +193,8 @@ return [
 		'URL'       => 'Illuminate\Support\Facades\URL',
 		'Validator' => 'Illuminate\Support\Facades\Validator',
 		'View'      => 'Illuminate\Support\Facades\View',
+		'DNS1D' => Milon\Barcode\Facades\DNS1DFacade::class,
+		'DNS2D' => Milon\Barcode\Facades\DNS2DFacade::class,
 
 	],
 

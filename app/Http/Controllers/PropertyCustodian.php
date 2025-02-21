@@ -4,11 +4,16 @@ use App\Http\Requests;
 use App\Http\Controllers\Controller;
 use App\Inventory;
 use App\InventoryName;
+use App\PurchaseOrder;
 use App\RequestSupplies;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use Picqer\Barcode\BarcodeGeneratorPNG;
+use Illuminate\Support\Facades\File;
+use Picqer\Barcode\BarcodeGenerator; 
+use Zxing\QrReader;
 
 class PropertyCustodian extends Controller {
 
@@ -61,6 +66,7 @@ class PropertyCustodian extends Controller {
 	public function GetInventory()
 	{
 		$inventory_list = Inventory::join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->where('inventory.inv_quantity','!=',0)
 			->select('inventory_name.name', 'inventory_name.description', 'inventory.id as inventory_id', 'inventory.inv_unit', 'inventory.inv_quantity', 'inventory.inv_brand', 'inventory.inv_name_id','inventory.inv_desc','inventory.inv_amount','inventory.inv_total_amount','inventory.inv_location')
 			->get();
 	
@@ -85,12 +91,132 @@ class PropertyCustodian extends Controller {
 						data-inventory_id="' . $inventory->inventory_id . '" 
 						style="margin: 4px;">
 						<span class="fa fa-trash"></span> Delete
-					</a>'
+					</a>
+					<a href="' . url('pc/generate-barcode/' . $inventory->inventory_id) . '" class="btn btn-success btn-sm text-white" 
+						style="margin: 4px;">
+						<span class="fa fa-barcode"></span> Generate Barcode
+					</a>
+					'
+					
 			];
 		});
 	
 		return response()->json($datatable);
 	}
+
+	public function Scanner()
+	{
+		return view('pc.scanner');
+	}
+
+	
+
+
+
+	public function generateBarcode($id)
+	{
+		$inventory = Inventory::findOrFail($id);
+		$generator = new BarcodeGeneratorPNG();
+		$barcodeType = $generator::TYPE_CODE_128;
+		$barcodeData = $generator->getBarcode($id, $barcodeType, 3, 100);
+	
+		// Define file name and path
+		$fileName = "barcode_{$id}.png";
+		$destinationPath = public_path("assets/site/images/barcodes/");
+	
+		// Ensure directory exists
+		if (!File::exists($destinationPath)) {
+			File::makeDirectory($destinationPath, 0755, true, true);
+		}
+	
+		// Save barcode image
+		file_put_contents($destinationPath . $fileName, $barcodeData);
+	
+		// Save filename to the database
+		if (!$inventory->barcode) {
+			$inventory->barcode = $fileName;
+			$inventory->save();
+		}
+	
+		return view('pc.barcode', [
+			'inventory' => $inventory,
+			'barcode' => asset("assets/site/images/barcodes/{$fileName}"), // Use URL for display
+		]);
+	}
+	public function uploadBarcode(Request $request)
+    {
+       
+
+        $image = $request->file('barcode_image');
+        $imagePath = $image->getPathname();
+
+        // Use QrReader to decode the barcode
+        $qrcode = new QrReader($imagePath);
+        $barcodeText = $qrcode->text();
+
+        if (empty($barcodeText)) {
+            return response()->json(['error' => 'Barcode not detected'], 400);
+        }
+
+        // Find the inventory item by the barcode text (assuming the barcode text is the inventory ID)
+        $inventory = Inventory::find($barcodeText);
+
+        if (!$inventory) {
+            return response()->json(['error' => 'Inventory not found'], 404);
+        }
+
+        // Return the inventory details
+        return response()->json([
+            'inventory' => $inventory,
+            'barcode_text' => $barcodeText,
+        ]);
+    }
+
+
+
+// 	public function generateBarcode($id)
+// {
+//     $inventory = Inventory::findOrFail($id);
+//     $generator = new BarcodeGeneratorPNG();
+
+//     // Generate barcode with increased size for better readability
+//     $barcodeData = $generator->getBarcode($id, $generator::TYPE_CODE_128, 3, 100);
+
+//     // Define the barcode file name and storage path
+//     $fileName = "barcode_{$id}.png";
+//     $destinationPath = public_path("assets/site/images/barcodes/");
+
+//     // Ensure directory exists
+//     if (!File::exists($destinationPath)) {
+//         File::makeDirectory($destinationPath, 0777, true, true);
+//     }
+
+//     // Full path for the barcode file
+//     $fullPath = $destinationPath . $fileName;
+
+//     // Delete old barcode if exists
+//     if (File::exists($fullPath)) {
+//         File::delete($fullPath);
+//     }
+
+//     // Save new barcode image
+//     file_put_contents($fullPath, $barcodeData);
+
+//     // Verify if barcode was successfully created
+//     if (!File::exists($fullPath)) {
+//         return response()->json(['error' => 'Failed to save barcode image'], 500);
+//     }
+
+//     // Update barcode path in the database
+//     $inventory->barcode = "assets/site/images/barcodes/{$fileName}";
+//     $inventory->save();
+
+//     return view('pc.barcode', [
+//         'inventory' => $inventory,
+//         'barcodePath' => asset("assets/site/images/barcodes/{$fileName}"),
+//     ]);
+// }
+	
 
 	public function CheckedStatusRequestData()
 	{
@@ -220,77 +346,122 @@ class PropertyCustodian extends Controller {
 		return response()->json($datatable);
 	}
 
+	public function checkInventory(Request $request)
+	{
+		try {
+			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+	
+			if (!$get_request_supplies) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Request Supplies not found.'
+				]);
+			}
+	
+			$request_quantity = $get_request_supplies->request_quantity;
+			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
+	
+			if (!$inventory) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Inventory not found.'
+				]);
+			}
+	
+			$inv_quantity = $inventory->inv_quantity;
+			return response()->json([
+				'status' => 'success',
+				'inventory_not_enough' => $request_quantity > $inv_quantity, 
+				'current_inventory' => $inv_quantity
+			]);
+	
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'failed',
+				'message' => 'An error occurred while checking inventory.',
+				'error' => $e->getMessage()
+			]);
+		}
+	}
+	
+
 	public function GetApprovedRequest(Request $request)
-{
-    try {
-        $gen_user = Auth::id();
-        $user = User::find($gen_user);
+	{
+		try {
+			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+	
+			if (!$get_request_supplies) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Request Supplies not found.'
+				]);
+			}
 
-        if (!$user) {
-            return response()->json([
-                'status' => 'failed',
-                'message' => 'User not found.'
-            ]);
-        }
+	
+			$request_quantity = $get_request_supplies->request_quantity;
+			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
+	
+			if (!$inventory) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Inventory not found.'
+				]);
+			}
+	
+			$inv_quantity = $inventory->inv_quantity;
+			$release_supplies_qty = $inv_quantity;
 
-        $get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+			$get_request_supplies->release_supplies_qty = $request_quantity;
+			$get_request_supplies->action_type = 5;
+			$get_request_supplies->save();
+	
 
-        if (!$get_request_supplies) {
-            return response()->json([
-                'status' => 'failed',
-                'message' => 'Request Supplies not found.'
-            ]);
-        }
+	
+			if ($request_quantity > $inv_quantity) {
 
-        $get_request_supplies->action_type = 5;
-        $get_request_supplies->save();
+				$release_supplies_qty = $inv_quantity;
 
-        $request_quantity = $get_request_supplies->request_quantity;
-        $request_inventory_id = $get_request_supplies->inventory_id;
+				$inventory->inv_quantity = 0; 
+				$inventory->save();
 
-        $inventory = Inventory::where('id', $request_inventory_id)->first();
-		// dd($inventory);
-        if (!$inventory) {
-            return response()->json([
-                'status' => 'failed',
-                'message' => 'Inventory not found.'
-            ]);
-        }
 
-      
-		$inv_quantity = $inventory->inv_quantity;
+				$purchase_order = PurchaseOrder::firstOrCreate([
+					'request_supplies_id' => $request->request_supplies_id,
+					'requested_by' => $get_request_supplies->requested_by,
+				]);
 
-		if ($request_quantity > $inv_quantity) {
-			
-			$inventory->inv_quantity = 0; 
+				$get_request_supplies->purchase_order_id = $purchase_order->id;
+				 $get_request_supplies->release_supplies_qty = $release_supplies_qty;
+				$get_request_supplies->action_type = 5; 
+				$get_request_supplies->save();
+	
+				return response()->json([
+					'status' => 'success',
+					'message' => 'Request Supplies Approved, but inventory is not enough. Remaining stock is now empty.',
+					'new_inventory_quantity' => 0
+				]);
+			}
+	
+			$new_inv_quantity = $inv_quantity - $request_quantity;
+			$inventory->inv_quantity = $new_inv_quantity;
 			$inventory->save();
+
 
 			return response()->json([
 				'status' => 'success',
-				'message' => 'Request Supplies Approved successfully, but inventory is not enough. Stock has been empty.',
-				'new_inventory_quantity' => 0 
+				'message' => 'Request Supplies Approved successfully.',
+				'new_inventory_quantity' => $new_inv_quantity
+			]);
+	
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'failed',
+				'message' => 'An error occurred while approving the request.',
+				'error' => $e->getMessage()
 			]);
 		}
+	}
 	
-        $new_inv_quantity = $inv_quantity - $request_quantity;
-        $inventory->inv_quantity = $new_inv_quantity;
-        $inventory->save();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Request Supplies Approved successfully.',
-            'new_inventory_quantity' => $new_inv_quantity 
-        ]);
-        
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'An error occurred while approving the request.',
-            'error' => $e->getMessage(),
-            'line' => $e->getLine()
-        ]);
-    }
-}
 
 public function ForReleaseRequest(Request $request)
 	{

@@ -206,53 +206,104 @@ $(document).ready(function() {
       oTable.on("click", ".approvedBtn", function() {
         const request_supplies_id = $(this).data("request_supplies_id");
 
-        Swal.fire({
-            title: "Are you sure?",
-            text: "To approve this request",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, approve it!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ url('pc/approved_supplies') }}",
-                    type: "POST",
-                    data: {
-                        request_supplies_id: request_supplies_id,
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Approved!',
-                                text: response.message || 'Request Supplies Approved successfully!',
-                            }).then(() => {
-                                oTable.ajax.reload(); 
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: response.message || 'Failed to approve Request Supplies. Please try again.',
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+        // Fetch inventory details first
+        $.ajax({
+            url: "{{ url('pc/check_inventory') }}", 
+            type: "POST",
+            data: {
+                request_supplies_id: request_supplies_id,
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    const requestQuantity = response.request_quantity;
+                    const availableInventory = response.inventory_quantity;
+
+                    if (requestQuantity > availableInventory) {
                         Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: errorMessage,
+                            title: "Insufficient Inventory",
+                            text: `Only ${availableInventory} pcs available, but ${requestQuantity} pcs requested. Do you want to proceed?`,
+                            icon: "warning",
+                            showCancelButton: true,
+                            confirmButtonColor: "#3085d6",
+                            cancelButtonColor: "#d33",
+                            confirmButtonText: "Yes, approve anyway"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                approveRequest(request_supplies_id, true);
+                            }
                         });
-                        console.log(xhr.responseText);
+                    } else {
+                        Swal.fire({
+                            title: "Are you sure?",
+                            text: "To approve this request",
+                            icon: "warning",
+                            showCancelButton: true,
+                            confirmButtonColor: "#3085d6",
+                            cancelButtonColor: "#d33",
+                            confirmButtonText: "Yes, approve it!"
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                approveRequest(request_supplies_id, false);
+                            }
+                        });
                     }
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: response.message || "Failed to check inventory.",
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: "An error occurred. Please try again.",
                 });
+                console.log(xhr.responseText);
             }
         });
     });
+
+    function approveRequest(request_supplies_id, forceApprove) {
+        $.ajax({
+            url: "{{ url('pc/approved_supplies') }}",
+            type: "POST",
+            data: {
+                request_supplies_id: request_supplies_id,
+                force_approve: forceApprove ? 1 : 0,
+                _token: "{{ csrf_token() }}"
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Approved!',
+                        text: response.message || 'Request Supplies Approved successfully!',
+                    }).then(() => {
+                        oTable.ajax.reload(); 
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: response.message || 'Failed to approve Request Supplies. Please try again.',
+                    });
+                }
+            },
+            error: function(xhr) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'An error occurred. Please try again.',
+                });
+                console.log(xhr.responseText);
+            }
+        });
+    }
+
 
     oTable.on("click", ".forReleaseBtn", function() {
         const request_supplies_id = $(this).data("request_supplies_id");

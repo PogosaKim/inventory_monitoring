@@ -436,14 +436,26 @@
                                 <div class="timeline-item-content">
                                     <div class="timeline-item-card">
                                         <h5 class="mb-2">For Pick-Up</h5>
+                                        
                                         @if($my_request_supplies->where('action_type', 5)->count() > 0)
                                             <p class="fs--1 mb-0">✅ Your request is ready for pick-up.</p>
                                             
                                             <p class="fs--1 fw-bold text-success mt-2">Supplies Ready for Pick-Up:</p>
                                             @foreach($my_request_supplies->where('action_type', 5) as $request)
-                                                <p class="fs--1 mb-0">• {{ $request->name }} ({{ $request->request_quantity }} {{ $request->inv_unit }}, {{ $request->inv_brand }})</p>
+                                                <p class="fs--1 mb-0">
+                                                    • {{ $request->name }} 
+                                                    (Released: {{ $request->release_supplies_qty }} {{ $request->inv_unit }}, 
+                                                    {{ $request->inv_brand }})
+                                                </p>
+                        
+                                                @if($request->request_quantity > $request->release_supplies_qty)
+                                                    <p class="fs--1 text-warning">
+                                                        ⚠️ Remaining {{ $request->request_quantity - $request->release_supplies_qty }} {{ $request->inv_unit }} 
+                                                        is waiting.
+                                                    </p>
+                                                @endif
                                             @endforeach
-
+                        
                                         @else
                                             <p class="fs--1 mb-0 text-danger">⚠️ Your request is still in process.</p>
                                         @endif
@@ -451,6 +463,7 @@
                                 </div>
                             </div>
                         </div>
+                        
                     </div>
 
 
