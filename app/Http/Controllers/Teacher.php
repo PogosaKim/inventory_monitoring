@@ -100,7 +100,8 @@ class Teacher extends Controller {
 		$my_request_supplies = RequestSupplies::where('request_supplies.requested_by', $gen_user)
 			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
 			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
-			->select('inventory_name.name', 'inventory.inv_unit', 'request_supplies.request_quantity', 'inventory.inv_brand', 'request_supplies.action_type','request_supplies.release_supplies_qty')
+			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
+			->select('inventory_name.name', 'inventory.inv_unit', 'request_supplies.request_quantity', 'inventory.inv_brand', 'request_supplies.action_type','request_supplies.release_supplies_qty','purchase_order.id as purchase_order_id')
 			->get();
 
 		return view('teacher.track_request', compact('my_request_supplies'));

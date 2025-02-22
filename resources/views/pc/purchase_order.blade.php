@@ -9,9 +9,10 @@
     background-color: red !important;
     color: white !important;
   }
+
 </style>
 
-<div class="container-fluid">
+<div class="container-fluid background_sidebar">
 	<script>
 		var isFluid = JSON.parse(localStorage.getItem('isFluid'));
             if (isFluid) {
@@ -42,7 +43,7 @@
 			</a>
 		</div>
 
-		@include('teacher_sidebar');
+		@include('pc_sidebar');
 
 	</nav>
 
@@ -58,7 +59,7 @@
 			<ul class="navbar-nav navbar-nav-icons ms-auto flex-row align-items-center">
 				<li class="nav-item">
                     @if (Auth::check())
-                        <p class="dropdown-item">Hi Teacher, {{ Auth::user()->name }}</p>
+                        <p class="dropdown-item">Hi Property Custodian, {{ Auth::user()->name }}</p>
                     @endif
 					<div class="theme-control-toggle fa-icon-wait px-2"><input
 							class="form-check-input ms-0 theme-control-toggle-input" id="themeControlToggle"
@@ -135,7 +136,7 @@
             <div class="card-body">
               <div class="row flex-between-center">
                 <div class="col-md">
-                  <h5 class="mb-2 mb-md-0">REQUEST SUPPLIES</h5>
+                  <h5 class="mb-2 mb-md-0">Welcome Back Property Custodian!</h5>
                 </div>
               </div>
             </div>
@@ -150,7 +151,7 @@
             </div>
          
             <div class="text-center mb-4">
-                <h5 style="font-size:18px;">REQUEST FORM</h5>
+                <h5 style="font-size:18px;">PURCHASE ORDER FORM</h5>
             </div>
         
          
@@ -168,7 +169,9 @@
             
                 <div class="d-flex justify-content-start mb-3">
                     <div style="flex-basis: 48%;">From (DEPT.): 
-                      
+                        {{-- <select name="school_department_id" id="school_department_id" class="form-control">
+                            <option value="{{ $teacher->school_department_id }}"> {{ $teacher->name }}</option>
+                        </select> --}}
                     </div>
                                        
                 </div>
@@ -227,8 +230,8 @@
             </form>
         </div>
         
-        
-        
+
+       
 
 
         
@@ -242,15 +245,10 @@
 @section('scripts')
 <script>
 
-document.getElementById('date-input').value = new Date().toISOString().split('T')[0];
-
-
- var oTable;
-$(document).ready(function() {
-  
-    
-        
-   $('#add-row').on('click', function() {
+    document.getElementById('date-input').value = new Date().toISOString().split('T')[0];
+ 
+ $(document).ready(function() {
+    $('#add-row').on('click', function() {
     var newRow = `<tr>
                     <td>
                         <select name="inventory_id[]" class="form-control">
@@ -280,6 +278,7 @@ $(document).ready(function() {
             }
         }
 
+        
         $('#requestSubmit').on('click', function(e) {
             e.preventDefault();
 
@@ -310,7 +309,7 @@ $(document).ready(function() {
             var html = $(this).html();
 
             $.ajax({
-                url: "{{ url('teacher/create_request') }}",
+                url: "{{ url('pc/create_request') }}",
                 type: "POST",
                 data: formData,
                 processData: false,  
@@ -345,7 +344,10 @@ $(document).ready(function() {
         });
 
 
+
 });
+
+
 
 </script>
 

@@ -200,18 +200,30 @@
                                     <div class="timeline-item-content">
                                         <div class="timeline-item-card">
                                             <h5 class="mb-2">Request Supplies</h5>
-                                
                                             <p class="fs--1 fw-bold">Total Active Requests: {{ $active_count }}</p>
-                                
                                             @if($active_count > 0)
-                                           
                                                 @foreach($active_supplies as $request)
                                                     <p class="fs--1 mb-0">
                                                         <span class="{{ $request->action_type == 6 ? 'text-decoration-line-through text-danger' : '' }}">
-                                                            • {{ $request->name }} ({{ $request->request_quantity }} {{ $request->inv_unit }}, {{ $request->inv_brand }})
+                                                            • {{ $request->name }} 
+                                                            (Requested: {{ $request->request_quantity }} {{ $request->inv_unit }}, {{ $request->inv_brand }})
                                                         </span>
-                                                        @if($request->action_type == 6)
-                                                            <span class="text-dark fs--1"> (Released on: {{ Carbon::parse($request->release_date)->format('M d, Y') }})</span>
+                                
+                                                        @if($request->release_supplies_qty == $request->request_quantity) 
+                                                            <p class="fs--1 text-success">
+                                                                ✅ Fully Released: {{ $request->release_supplies_qty }} {{ $request->inv_unit }}
+                                                            </p>
+                                                        @elseif($request->purchase_order_id) 
+                                                            <p class="fs--1 text-success">
+                                                                ✅ Released: {{ $request->release_supplies_qty }} {{ $request->inv_unit }}
+                                                            </p>
+                                                            <p class="fs--1 text-warning">
+                                                                ⚠️ Remaining {{ $request->request_quantity - $request->release_supplies_qty }} {{ $request->inv_unit }} waiting for purchase order.
+                                                            </p>
+                                                        @else
+                                                            <p class="fs--1 text-danger">
+                                                                ⚠️ Request still in process.
+                                                            </p>
                                                         @endif
                                                     </p>
                                                 @endforeach
@@ -221,6 +233,8 @@
                                         </div>
                                     </div>
                                 </div>
+                                
+                                
                             
                                 
                             </div>

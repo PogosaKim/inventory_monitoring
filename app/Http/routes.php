@@ -75,6 +75,11 @@ Route::get('pc/get_inventory','PropertyCustodian@GetInventory');
 Route::post('pc/update_inventory','PropertyCustodian@InventoryUpdate');
 Route::post('pc/destroy','PropertyCustodian@destroy');
 Route::get('pc/pc/check_status_request','PropertyCustodian@CheckedStatusRequestData');
+Route::get('pc/purchase_order','PropertyCustodian@PurchaseOrder');
+Route::post('pc/create_request','PropertyCustodian@Createrequest');
+
+
+
 Route::get('pc/scanner','PropertyCustodian@Scanner');
 Route::get('pc/generate-barcode/{id}', 'PropertyCustodian@generateBarcode');
 Route::post('pc/barcode_upload','PropertyCustodian@uploadBarcode');

@@ -4,8 +4,11 @@ use App\Http\Requests;
 use App\Http\Controllers\Controller;
 use App\Inventory;
 use App\InventoryName;
+use App\Person;
 use App\PurchaseOrder;
 use App\RequestSupplies;
+use App\Roles;
+use App\Teachers;
 use App\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +36,68 @@ class PropertyCustodian extends Controller {
 
 		$inventory_name_list = InventoryName::all();
 		return view('pc.inventory',compact('inventory_name_list'));
+	}
+
+	public function PurchaseOrder()
+	{
+		$gen_user = Auth::user()->person_id;
+
+		$person = Person::find($gen_user);
+		// dd($person);
+
+			$role = Roles::where('id', 4)
+             ->select('id', 'name')
+             ->first();
+		
+
+
+
+		$inventory_list = Inventory::join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+		->select('inventory.id as inventory_id', 'inventory_name.name', 'inventory_name.description', 'inventory.inv_unit', 'inventory.inv_quantity')
+		->get();
+
+
+		return view('pc.purchase_order',compact('role','teacher','person','inventory_list'));
+	}
+
+	public function Createrequest()
+	{
+		$user_role_id = \Request::get('user_role_id');
+		$date = \Request::get('date');
+		$school_department_id = \Request::get('school_department_id');
+		$inventory_ids = \Request::get('inventory_id');
+		$request_quantities = \Request::get('request_quantity');
+		
+		try {
+			foreach ($inventory_ids as $index => $inventoryId) {
+				RequestSupplies::create([
+					'inventory_id' => $inventoryId,  
+					'requested_by' => Auth::user()->id,
+					'user_role_id' => $user_role_id,
+					'school_department_id' => $school_department_id,
+					'date' => $date,
+					'request_quantity' => $request_quantities[$index],
+					'action_type' => 3 ,
+					'is_purchase_order' => 1
+				]);
+			}
+
+			\DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Request submitted successfully!',
+			]);
+
+		} catch (\Exception $e) {
+			\DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to submit the request. Please try again.',
+				'error' => $e->getMessage(),
+			]);
+		}
 	}
 
 	public function InventoryCreate()
@@ -280,6 +345,7 @@ class PropertyCustodian extends Controller {
 			->join('person as request_person', 'request_user.person_id', '=', 'request_person.id')
 			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
+			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
 			->whereIn('request_supplies.action_type', [4,5,6])
 			->select(
 				'request_supplies.id',
@@ -292,56 +358,66 @@ class PropertyCustodian extends Controller {
 				'inventory_name.name',
 				'request_supplies.request_quantity',
 				'request_supplies.date',
-				'request_supplies.action_type'
+				'request_supplies.action_type',
+				'purchase_order.status as po_status'
 			)
 			->orderBy('request_supplies.updated_at','desc')
 			->get();
 
-		$datatable = $get_request_supplies->map(function ($request) {
-			$statusText = ($request->action_type == 4) ? 'For Release' :
-			(($request->action_type == 5) ? 'For Pick Up' :
-			(($request->action_type == 6) ? 'Done Release' : ''));
-
-			$statusBadgeClass = ($request->action_type == 4) ? 'badge-soft-warning' :
-							(($request->action_type == 5) ? 'badge-soft-success' :
-							(($request->action_type == 6) ? 'badge-soft-primary' : 'badge-soft-secondary')) ;
-
-			$approveButton = ($request->action_type == 5) ? 
-			'<button type="button" class="btn btn-success btn-sm text-white forReleaseBtn" data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
-				<span class="fa fa-check"></span> For Pick Up
-			</button>' :
-			(($request->action_type == 6) ?
-			'<button type="button" class="btn btn-primary btn-sm text-white" disabled  style="margin: 4px;>
-				<span class="fa fa-check"></span> Done Release
-			</button>' :
-			'<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
-				data-request_supplies_id="' . $request->id . '" 
-				style="margin: 4px;">
-				<span class="fa fa-check"></span> Approve
-			</a>');
-
-
-			$requestedBy = strtoupper(trim(
-				$request->requested_first_name . ' ' . 
-				($request->requested_middle_name ? $request->requested_middle_name . ' ' : '') . 
-				$request->requested_last_name
-			));
-
-			$approvedBy = strtoupper(trim(
-				$request->approved_first_name . ' ' . 
-				($request->approved_middle_name ? $request->approved_middle_name . ' ' : '') . 
-				$request->approved_last_name
-			));
-
-			return [
-				'requested_by' => $requestedBy,
-				'item' => $request->name,
-				'quantity' => $request->request_quantity,
-				'date' => Carbon::parse($request->date)->format('F j, Y'),
-				'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
-				'action' => $approveButton,
-			];
-		});
+			$datatable = $get_request_supplies->map(function ($request) {
+				$statusText = ($request->action_type == 4) ? 'For Release' :
+					(($request->action_type == 5) ? 'For Pick Up' :
+					(($request->action_type == 6) ? 'Done Release' : ''));
+		
+				$statusBadgeClass = ($request->action_type == 4) ? 'badge-soft-warning' :
+					(($request->action_type == 5) ? 'badge-soft-success' :
+					(($request->action_type == 6) ? 'badge-soft-primary' : 'badge-soft-secondary'));
+		
+				if ($request->action_type == 6) {
+					if ($request->po_status == 1) {  
+						$approveButton = '<button type="button" class="btn btn-warning btn-sm text-white processPoBtn" 
+											data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+											<span class="fa fa-truck"></span> Process PO
+										</button>';
+					} else {
+						$approveButton = '<button type="button" class="btn btn-primary btn-sm text-white" disabled style="margin: 4px;">
+											<span class="fa fa-check"></span> Done Release
+										</button>';
+					}
+				} elseif ($request->action_type == 5) {
+					$approveButton = '<button type="button" class="btn btn-success btn-sm text-white forReleaseBtn" 
+										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+										<span class="fa fa-check"></span> For Pick Up
+									</button>';
+				} else {
+					$approveButton = '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
+										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+										<span class="fa fa-check"></span> Approve
+									</a>';
+				}
+		
+				$requestedBy = strtoupper(trim(
+					$request->requested_first_name . ' ' .
+					($request->requested_middle_name ? $request->requested_middle_name . ' ' : '') .
+					$request->requested_last_name
+				));
+		
+				$approvedBy = strtoupper(trim(
+					$request->approved_first_name . ' ' .
+					($request->approved_middle_name ? $request->approved_middle_name . ' ' : '') .
+					$request->approved_last_name
+				));
+		
+				return [
+					'requested_by' => $requestedBy,
+					'item' => $request->name,
+					'quantity' => $request->request_quantity,
+					'date' => Carbon::parse($request->date)->format('F j, Y'),
+					'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
+					'action' => $approveButton,
+				];
+			});
+		
 
 		return response()->json($datatable);
 	}
