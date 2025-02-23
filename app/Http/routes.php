@@ -70,6 +70,8 @@ Route::get('pc/for_release_data','PropertyCustodian@GetForReleaseData');
 Route::post('pc/check_inventory','PropertyCustodian@checkInventory');
 Route::post('pc/approved_supplies','PropertyCustodian@GetApprovedRequest');
 Route::post('pc/for_release_supplies','PropertyCustodian@ForReleaseRequest');
+Route::post('pc/for_approved_po_supplies','PropertyCustodian@ForApprovedPOSupplies');
+Route::post('pc/for_process_po','PropertyCustodian@ForProcessPO');
 Route::post('pc/create_inventory','PropertyCustodian@InventoryCreate');
 Route::get('pc/get_inventory','PropertyCustodian@GetInventory');
 Route::post('pc/update_inventory','PropertyCustodian@InventoryUpdate');

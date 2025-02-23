@@ -131,7 +131,6 @@ class PropertyCustodian extends Controller {
 	public function GetInventory()
 	{
 		$inventory_list = Inventory::join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
-			->where('inventory.inv_quantity','!=',0)
 			->select('inventory_name.name', 'inventory_name.description', 'inventory.id as inventory_id', 'inventory.inv_unit', 'inventory.inv_quantity', 'inventory.inv_brand', 'inventory.inv_name_id','inventory.inv_desc','inventory.inv_amount','inventory.inv_total_amount','inventory.inv_location')
 			->get();
 	
@@ -156,10 +155,6 @@ class PropertyCustodian extends Controller {
 						data-inventory_id="' . $inventory->inventory_id . '" 
 						style="margin: 4px;">
 						<span class="fa fa-trash"></span> Delete
-					</a>
-					<a href="' . url('pc/generate-barcode/' . $inventory->inventory_id) . '" class="btn btn-success btn-sm text-white" 
-						style="margin: 4px;">
-						<span class="fa fa-barcode"></span> Generate Barcode
 					</a>
 					'
 					
@@ -357,9 +352,12 @@ class PropertyCustodian extends Controller {
 				'approve_person.last_name as approved_last_name',
 				'inventory_name.name',
 				'request_supplies.request_quantity',
+				'request_supplies.release_supplies_qty',
 				'request_supplies.date',
 				'request_supplies.action_type',
-				'purchase_order.status as po_status'
+				'request_supplies.is_purchase_order',
+				'purchase_order.status as po_status',
+				'purchase_order.id as purchase_order_id'
 			)
 			->orderBy('request_supplies.updated_at','desc')
 			->get();
@@ -389,7 +387,13 @@ class PropertyCustodian extends Controller {
 										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
 										<span class="fa fa-check"></span> For Pick Up
 									</button>';
-				} else {
+				} elseif ($request->is_purchase_order == 1){
+					$approveButton = '<button type="button" class="btn btn-warning btn-sm text-white approvedPoBtn" 
+											data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+											<span class="fa fa-box"></span> Approved PO
+										</button>';
+				}
+				 else {
 					$approveButton = '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
 										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
 										<span class="fa fa-check"></span> Approve
@@ -407,11 +411,14 @@ class PropertyCustodian extends Controller {
 					($request->approved_middle_name ? $request->approved_middle_name . ' ' : '') .
 					$request->approved_last_name
 				));
+				$needed = $request->purchase_order_id ? ($request->request_quantity - $request->release_supplies_qty) : null;
 		
 				return [
 					'requested_by' => $requestedBy,
 					'item' => $request->name,
 					'quantity' => $request->request_quantity,
+					'release' => $request->release_supplies_qty,
+					'needed' => $needed,
 					'date' => Carbon::parse($request->date)->format('F j, Y'),
 					'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
 					'action' => $approveButton,
@@ -504,6 +511,7 @@ class PropertyCustodian extends Controller {
 				$purchase_order = PurchaseOrder::firstOrCreate([
 					'request_supplies_id' => $request->request_supplies_id,
 					'requested_by' => $get_request_supplies->requested_by,
+					'status' => 1
 				]);
 
 				$get_request_supplies->purchase_order_id = $purchase_order->id;
@@ -579,7 +587,131 @@ public function ForReleaseRequest(Request $request)
 		}
 	}
 
+	public function ForApprovedPOSupplies(Request $request)
+	{
+		try {
+			$gen_user = Auth::id();
+			$user = User::find($gen_user);
+	
+			if (!$user) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'User not found.'
+				]);
+			}
+	
+			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+	
+			if (!$get_request_supplies) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Request supply not found.'
+				]);
+			}
+	
+			$request_quantity = $get_request_supplies->request_quantity;
+			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
+	
+			if (!$inventory) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Inventory item not found.'
+				]);
+			}
+	
+		
+			$inventory->inv_quantity += $request_quantity;
+			$inventory->save();
+	
+		
+			$get_request_supplies->action_type = 6;
+			$get_request_supplies->release_date = Carbon::now();
+			$get_request_supplies->is_purchase_order = 0; 
+			$get_request_supplies->save();
+	
+			return response()->json([
+				'status' => 'success',
+				'message' => 'Purchase Order Approved, and inventory updated successfully.'
+			]);
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'failed',
+				'message' => 'An error occurred while approving the request.',
+				'error' => $e->getMessage(),
+				'line' => $e->getLine()
+			]);
+		}
+	}
 
+
+	public function ForProcessPO(Request $request)
+	{
+		try {
+			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+	
+			if (!$get_request_supplies) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Request Supplies not found.'
+				]);
+			}
+	
+			$request_quantity = $get_request_supplies->request_quantity;
+			$release_supplies_qty = $get_request_supplies->release_supplies_qty;
+			$needed_quantity = $request_quantity - $release_supplies_qty; 
+	
+			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
+	
+			if (!$inventory) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Inventory not found.'
+				]);
+			}
+	
+			$inv_quantity = $inventory->inv_quantity;
+	
+		
+			if ($needed_quantity > $inv_quantity) {
+
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Not enough inventory. Available stock: ' . $inv_quantity,
+					'available_stock' => $inv_quantity
+				]);
+			}
+
+			$purchase_order = PurchaseOrder::where('request_supplies_id', $request->request_supplies_id)->first();
+            
+			if ($purchase_order) {
+				$purchase_order->status = 2; 
+				$purchase_order->save();
+			}
+	
+	
+			$inventory->inv_quantity -= $needed_quantity;
+			$inventory->save();
+	
+
+			$get_request_supplies->release_supplies_qty += $needed_quantity;
+			$get_request_supplies->action_type = 5;
+			$get_request_supplies->save();
+	
+			return response()->json([
+				'status' => 'success',
+				'message' => 'Request Supplies Approved successfully.',
+				'new_inventory_quantity' => $inventory->inv_quantity
+			]);
+	
+		} catch (\Exception $e) {
+			return response()->json([
+				'status' => 'failed',
+				'message' => 'An error occurred while processing the request.',
+				'error' => $e->getMessage()
+			]);
+		}
+	}
+	
 	
 
 	

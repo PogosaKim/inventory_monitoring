@@ -133,44 +133,60 @@ class Finance extends Controller {
 
 
 	public function GetApprovedRequest(Request $request)
-	{
-		try {
-			$gen_user = Auth::id();
-			$user = User::find($gen_user);
-	
-			if (!$user) {
-				return response()->json([
-					'status' => 'failed',
-					'message' => 'User not found.'
-				]);
-			}
-	
-			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
-	
-			if (!$get_request_supplies) {
-				return response()->json([
-					'status' => 'failed',
-					'message' => 'Request Supplies not found.'
-				]);
-			}
-			$get_request_supplies->approved_by_finance = $user->id;
-			$get_request_supplies->action_type = 4;
-			$get_request_supplies->save();
-	
-			return response()->json([
-				'status' => 'success',
-				'message' => 'Request Supplies Approved successfully.'
-			]);
-	
-		} catch (\Exception $e) {
-			return response()->json([
-				'status' => 'failed',
-				'message' => 'An error occurred while approving the request.',
-				'error' => $e->getMessage(),
-				'line' => $e->getLine()
-			]);
-		}
-	}
+{
+    try {
+        $gen_user = Auth::id();
+        $user = User::find($gen_user);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'User not found.'
+            ]);
+        }
+
+        $get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+
+        if (!$get_request_supplies) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Request Supplies not found.'
+            ]);
+        }
+
+        $requesting_user = User::find($get_request_supplies->requested_by);
+
+        if (!$requesting_user) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Requesting user not found.'
+            ]);
+        }
+
+        $get_request_supplies->approved_by_finance = $user->id;
+        $get_request_supplies->action_type = 4;
+
+        if ($requesting_user->user_role_id = 1) {
+            $get_request_supplies->is_purchase_order = 1;
+        }
+
+        $get_request_supplies->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Request Supplies Approved successfully.'
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'failed',
+            'message' => 'An error occurred while approving the request.',
+            'error' => $e->getMessage(),
+            'line' => $e->getLine()
+        ]);
+    }
+}
+
 
 	
 

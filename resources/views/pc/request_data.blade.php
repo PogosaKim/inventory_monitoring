@@ -141,6 +141,8 @@
                             <th>Requested By</th>
                             <th>Item</th>
                             <th>Quantity</th>
+                            <th>Release</th>
+                            <th>Needed</th>
                             <th>Date</th>
                             <th>Status</th>
                             <th>Action</th>
@@ -187,6 +189,12 @@ $(document).ready(function() {
           },
           {
               data: 'quantity'
+          },
+          {
+              data: 'release'
+          },
+          {
+              data: 'needed'
           },
           {
               data: 'date'
@@ -331,6 +339,111 @@ $(document).ready(function() {
                                 icon: 'success',
                                 title: 'Approved!',
                                 text: response.message || 'Request Supplies Approved successfully!',
+                            }).then(() => {
+                                oTable.ajax.reload(); 
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'Failed to approve Request Supplies. Please try again.',
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMessage,
+                        });
+                        console.log(xhr.responseText);
+                    }
+                });
+            }
+        });
+    });
+
+
+    oTable.on("click", ".approvedPoBtn", function() {
+        const request_supplies_id = $(this).data("request_supplies_id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "To approve this request",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, approve it!"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{{ url('pc/for_approved_po_supplies') }}",
+                    type: "POST",
+                    data: {
+                        request_supplies_id: request_supplies_id,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Approved!',
+                                text: response.message || 'Purchase Order Approved successfully!',
+                            }).then(() => {
+                                oTable.ajax.reload(); 
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'Failed to approve Request Supplies. Please try again.',
+                            });
+                        }
+                    },
+                    error: function(xhr) {
+                        let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: errorMessage,
+                        });
+                        console.log(xhr.responseText);
+                    }
+                });
+            }
+        });
+    });
+
+
+    
+    oTable.on("click", ".processPoBtn", function() {
+        const request_supplies_id = $(this).data("request_supplies_id");
+
+        Swal.fire({
+            title: "Are you sure?",
+            text: "To approve this request",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#3085d6",
+            cancelButtonColor: "#d33",
+            confirmButtonText: "Yes, approve it!"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    url: "{{ url('pc/for_process_po') }}",
+                    type: "POST",
+                    data: {
+                        request_supplies_id: request_supplies_id,
+                        _token: "{{ csrf_token() }}"
+                    },
+                    success: function(response) {
+                        if (response.status === 'success') {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Approved!',
+                                text: response.message || 'Purchase Order Approved successfully!',
                             }).then(() => {
                                 oTable.ajax.reload(); 
                             });

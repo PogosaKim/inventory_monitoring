@@ -168,7 +168,9 @@
             
                 <div class="d-flex justify-content-start mb-3">
                     <div style="flex-basis: 48%;">From (DEPT.): 
-                      
+                        <select name="school_department_id" id="school_department_id" class="form-control">
+                            <option value="{{ $teacher->school_department_id }}"> {{ $teacher->name }}</option>
+                        </select>
                     </div>
                                        
                 </div>

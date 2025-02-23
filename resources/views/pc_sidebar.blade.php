@@ -18,9 +18,9 @@
           <a class="nav-link {{ Request::is('pc/purchase_order') ? 'active' : '' }}" href="{{URL::to('pc/purchase_order')}}" role="button">
             <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">For Purchase Order</span></div>
           </a>
-          <a class="nav-link {{ Request::is('pc/scanner') ? 'active' : '' }}" href="{{URL::to('pc/scanner')}}" role="button">
+          {{-- <a class="nav-link {{ Request::is('pc/scanner') ? 'active' : '' }}" href="{{URL::to('pc/scanner')}}" role="button">
             <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">Scan Inventory</span></div>
-          </a>
+          </a> --}}
           {{-- <a class="nav-link {{ Request::is('admin/dashboard') ? 'active' : '' }}" href="{{URL::to('admin/dashboard')}}" role="button">
             <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">Dashboard</span></div>
           </a>  

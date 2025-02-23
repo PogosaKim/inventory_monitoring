@@ -75,8 +75,9 @@ class Dean extends Controller {
 		->where('request_supplies.school_department_id',$user->school_department_id)
 		->where('request_supplies.user_role_id',$user->user_role_id)
 		->select('request_supplies.id','person.first_name','person.last_name','person.middle_name','inventory_name.name','request_supplies.request_quantity','request_supplies.date','request_supplies.action_type')
-		->orderBy('request_supplies.updated_at','desc')
+		->orderBy('request_supplies.updated_at','asc')
 		->get();
+		// dd($get_request_supplies);
 
 
 		$datatable = $get_request_supplies->map(function ($request) {
