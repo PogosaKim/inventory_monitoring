@@ -472,18 +472,18 @@ class PropertyCustodian extends Controller {
 	{
 		try {
 			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
-	
 			if (!$get_request_supplies) {
 				return response()->json([
 					'status' => 'failed',
 					'message' => 'Request Supplies not found.'
 				]);
 			}
-
 	
+			
 			$request_quantity = $get_request_supplies->request_quantity;
-			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
 	
+		
+			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
 			if (!$inventory) {
 				return response()->json([
 					'status' => 'failed',
@@ -492,45 +492,42 @@ class PropertyCustodian extends Controller {
 			}
 	
 			$inv_quantity = $inventory->inv_quantity;
-			$release_supplies_qty = $inv_quantity;
-
-			$get_request_supplies->release_supplies_qty = $request_quantity;
-			$get_request_supplies->action_type = 5;
-			$get_request_supplies->save();
 	
-
-	
+		
 			if ($request_quantity > $inv_quantity) {
-
+				
 				$release_supplies_qty = $inv_quantity;
-
-				$inventory->inv_quantity = 0; 
+				$inventory->inv_quantity = 0;
 				$inventory->save();
-
-
+	
+			
 				$purchase_order = PurchaseOrder::firstOrCreate([
-					'request_supplies_id' => $request->request_supplies_id,
+					'request_supplies_id' => $get_request_supplies->id,
 					'requested_by' => $get_request_supplies->requested_by,
 					'status' => 1
 				]);
-
+	
 				$get_request_supplies->purchase_order_id = $purchase_order->id;
-				 $get_request_supplies->release_supplies_qty = $release_supplies_qty;
-				$get_request_supplies->action_type = 5; 
+				$get_request_supplies->release_supplies_qty = $release_supplies_qty;
+				$get_request_supplies->action_type = 5;
 				$get_request_supplies->save();
 	
 				return response()->json([
 					'status' => 'success',
-					'message' => 'Request Supplies Approved, but inventory is not enough. Remaining stock is now empty.',
+					'message' => 'Request Supplies Approved, but inventory is insufficient. Inventory is now empty.',
 					'new_inventory_quantity' => 0
 				]);
 			}
 	
+			
 			$new_inv_quantity = $inv_quantity - $request_quantity;
 			$inventory->inv_quantity = $new_inv_quantity;
 			$inventory->save();
-
-
+	
+			$get_request_supplies->release_supplies_qty = $request_quantity;
+			$get_request_supplies->action_type = 5;
+			$get_request_supplies->save();
+	
 			return response()->json([
 				'status' => 'success',
 				'message' => 'Request Supplies Approved successfully.',
@@ -547,7 +544,7 @@ class PropertyCustodian extends Controller {
 	}
 	
 
-public function ForReleaseRequest(Request $request)
+	public function ForReleaseRequest(Request $request)
 	{
 		try {
 			$gen_user = Auth::id();
@@ -561,6 +558,38 @@ public function ForReleaseRequest(Request $request)
 			}
 	
 			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+
+			$request_quantity = $get_request_supplies->request_quantity;
+		
+			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
+			if (!$inventory) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Inventory not found.'
+				]);
+			}
+
+			$inv_quantity = $inventory->inv_quantity;
+			$purchase_order = PurchaseOrder::where('request_supplies_id', $request->request_supplies_id)
+			->where('status', 2)
+			->first();
+		
+		if (!$purchase_order) {
+			
+			$new_inv_quantity = $inv_quantity - $request_quantity;
+		
+			if ($new_inv_quantity < 0) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Not enough inventory available.'
+				]);
+			}
+		
+			$inventory->inv_quantity = $new_inv_quantity;
+			$inventory->save();
+		}
+		
+	
 	
 			if (!$get_request_supplies) {
 				return response()->json([
@@ -601,7 +630,7 @@ public function ForReleaseRequest(Request $request)
 			}
 	
 			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
-	
+			
 			if (!$get_request_supplies) {
 				return response()->json([
 					'status' => 'failed',
@@ -610,8 +639,9 @@ public function ForReleaseRequest(Request $request)
 			}
 	
 			$request_quantity = $get_request_supplies->request_quantity;
+			// dd($request_quantity);
 			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
-	
+			
 			if (!$inventory) {
 				return response()->json([
 					'status' => 'failed',
@@ -622,7 +652,8 @@ public function ForReleaseRequest(Request $request)
 		
 			$inventory->inv_quantity += $request_quantity;
 			$inventory->save();
-	
+			// dd($inventory);
+
 		
 			$get_request_supplies->action_type = 6;
 			$get_request_supplies->release_date = Carbon::now();
@@ -670,6 +701,7 @@ public function ForReleaseRequest(Request $request)
 			}
 	
 			$inv_quantity = $inventory->inv_quantity;
+			// dd($inv_quantity);
 	
 		
 			if ($needed_quantity > $inv_quantity) {

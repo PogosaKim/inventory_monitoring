@@ -166,7 +166,7 @@ class Finance extends Controller {
         $get_request_supplies->approved_by_finance = $user->id;
         $get_request_supplies->action_type = 4;
 
-        if ($requesting_user->user_role_id = 1) {
+        if ($requesting_user->user_role_id == 1) {
             $get_request_supplies->is_purchase_order = 1;
         }
 
