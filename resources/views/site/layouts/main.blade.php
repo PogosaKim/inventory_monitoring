@@ -40,7 +40,7 @@
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.25/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 
     {{-- <link rel="stylesheet" href="iziToast.min.css"/> --}}
 
@@ -84,20 +84,16 @@
     </main>
 
     <script src="{{asset('assets/site/js/jquery-2.1.1.min.js')}}"></script>
-    {{-- <script src="{{asset('assets_test/js/theme.js')}}"></script> --}}
-    <script src="{{asset('assets_test/js/theme.js')}}"></script>
     <script src="{{asset('assets/site/chartist/chartist.js')}}"></script>
     <script src="{{asset('assets/site/js/jquery-migrate-1.2.1.min.js')}}"></script>
     <script src="{{asset('assets/site/js/bootstrap.min.js')}}"></script>
     <script src="{{asset('assets/site/js/jquery-ui.1.11.2.min.js')}}"></script>
     <script src="{{asset('assets/site/js/plugins/metisMenu/metisMenu.min.js')}}"></script>
-    <script src="{{asset('assets/site/js/sb-admin-2.js')}}"></script>
     <script src="{{asset('assets/site/js/jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('assets/site/js/bootstrap-datepicker.min.js')}}"></script>         
     <script src="{{asset('assets/site/datatables/cdn.datatables.net_1.13.6_js_jquery.dataTables.min.js')}}"></script>
     <script src="{{asset('assets/site/js/moment.min.js')}}"></script> 
-    <script src="{{asset('assets/site/js/flatpickr.js')}}"></script> 
-    <script src="{{asset('assets/site/js/bootstrap-datetimepicker.min.js')}}"></script> 
+    <script src="{{asset('assets/site/js/flatpickr.js')}}"></script>
     <script src="{{asset('assets/site/js/dataTables.bootstrap.js')}}"></script>
     <script src="{{asset('assets/site/js/bootstrap-dataTables-paging.js')}}"></script>
     <script src="{{asset('assets/site/js/jquery.colorbox.js')}}"></script>
@@ -106,14 +102,10 @@
     <script src="{{asset('assets/site/js/modal.js')}}"></script>
     <script src="{{asset('assets/site/js/SelectListChange.js')}}"></script> 
     <script src="{{asset('assets/site/js/typeahead.bundle.js')}}"></script>
-    <script src="{{asset('assets/site/js/select2.js')}}"></script>
-    <script src="{{asset('assets/site/js/fullcalendar.min.js')}}"></script> 
     <script src="{{asset('assets/site/js/jquery.print.js')}}"></script>
-    <script src="{{asset('assets/site/theme.js')}}"></script>
     <script src="{{asset('assets/site/js/handsontable.full.js')}}"></script>  
     <script src="{{asset('assets/site/js/sweetalert2.min.js')}}"></script> 
     <script src="{{asset('assets/site/canvas/jquery.canvasjs.min.js')}}"></script> 
-    <script src="{{asset('assets/site/fullcalendar/dist/fullcalendar.min.js')}}"></script> 
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
     <script type="text/javascript" charset="utf8" src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.25/js/jquery.dataTables.min.js"></script>
@@ -121,10 +113,7 @@
     <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
     <script src="https://unpkg.com/@zxing/library@latest"></script>
-    {{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/quagga/0.12.1/quagga.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> --}}
-
-
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
         @yield('scripts')
     </body>
 </html>

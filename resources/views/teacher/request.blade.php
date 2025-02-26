@@ -189,7 +189,7 @@
                         <tbody>
                             <tr>
                                 <td>
-                                    <select name="inventory_id[]" id="inventory_id" class="form-control">
+                                    <select name="inventory_id[]" id="inventory_id" class="form-control" >
                                         <option value="0">--Select--</option>
                                         @foreach ($inventory_list as $inventory)
                                             <option value="{{ $inventory->inventory_id }}"> {{ $inventory->name }}</option>
@@ -250,7 +250,10 @@ document.getElementById('date-input').value = new Date().toISOString().split('T'
  var oTable;
 $(document).ready(function() {
   
-    
+    $('#inventory_id').select2({
+            placeholder: "--Select--",
+            allowClear: true
+        });
         
    $('#add-row').on('click', function() {
     var newRow = `<tr>

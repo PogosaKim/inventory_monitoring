@@ -204,16 +204,46 @@
                     </table>
                 
                 </div>
-        
-                <div class="mb-4 text-center">
-                    <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
-                    @if (!empty($person->signature))
-                        <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
-                    @else
-                        <p>No signature available</p>
-                    @endif
-                    <hr style="width: 15%; border-color: #333; margin: 10px auto;">
+                <div class="row justify-content-center">
+                    <div class="col-md-2 text-center">
+                        <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
+                        @if (!empty($person->signature))
+                            <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
+                        @else
+                            <p>No signature available</p>
+                        @endif
+                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
+                        @if (!empty($person->signature))
+                            <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
+                        @else
+                            <p>No signature available</p>
+                        @endif
+                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
+                        @if (!empty($person->signature))
+                            <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
+                        @else
+                            <p>No signature available</p>
+                        @endif
+                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
+                        @if (!empty($person->signature))
+                            <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
+                        @else
+                            <p>No signature available</p>
+                        @endif
+                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                    </div>
                 </div>
+                
+                
                 
                 
 
@@ -248,6 +278,10 @@
     document.getElementById('date-input').value = new Date().toISOString().split('T')[0];
  
  $(document).ready(function() {
+    $('#inventory_id').select2({
+            placeholder: "--Select--",
+            allowClear: true
+        });
     $('#add-row').on('click', function() {
     var newRow = `<tr>
                     <td>

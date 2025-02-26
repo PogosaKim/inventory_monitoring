@@ -175,7 +175,7 @@ $(document).ready(function() {
   
   oTable = $("#requestTable").DataTable({
       ajax: {
-          url: "{{ url('pc/for_release_data') }}",
+          url: "{{ url('pc/for_new_release_data') }}",
           type: "GET",
           data: function(d) { 
           },

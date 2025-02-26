@@ -245,7 +245,10 @@ document.getElementById('date-input').value = new Date().toISOString().split('T'
  var oTable;
 $(document).ready(function() {
   
-    
+    $('#inventory_id').select2({
+            placeholder: "--Select--",
+            allowClear: true
+        });
         
    $('#add-row').on('click', function() {
     var newRow = `<tr>

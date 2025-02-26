@@ -45,7 +45,7 @@ class PropertyCustodian extends Controller {
 		$person = Person::find($gen_user);
 		// dd($person);
 
-			$role = Roles::where('id', 4)
+			$role = Roles::where('id', 3)
              ->select('id', 'name')
              ->first();
 		
@@ -54,6 +54,7 @@ class PropertyCustodian extends Controller {
 
 		$inventory_list = Inventory::join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
 		->select('inventory.id as inventory_id', 'inventory_name.name', 'inventory_name.description', 'inventory.inv_unit', 'inventory.inv_quantity')
+		->where('inventory.inv_quantity',0)
 		->get();
 
 
@@ -328,6 +329,11 @@ class PropertyCustodian extends Controller {
 		return view('pc.request_data');
 	}
 
+	public function GetNewReleaseData()
+	{
+		return view('pc.new_request_data');
+	}
+
 	public function GetForReleaseData()
 	{
 		$gen_user = Auth::user()->id;
@@ -341,15 +347,17 @@ class PropertyCustodian extends Controller {
 			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
 			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
-			->whereIn('request_supplies.action_type', [4,5,6])
+			->whereIn('request_supplies.action_type', [5,6])
 			->select(
 				'request_supplies.id',
 				'request_person.first_name as requested_first_name',
 				'request_person.middle_name as requested_middle_name',
 				'request_person.last_name as requested_last_name',
+				'request_person.signature as requested_signature',
 				'approve_person.first_name as approved_first_name',
 				'approve_person.middle_name as approved_middle_name',
 				'approve_person.last_name as approved_last_name',
+				'approve_person.signature as approved_signature',
 				'inventory_name.name',
 				'request_supplies.request_quantity',
 				'request_supplies.release_supplies_qty',
@@ -411,10 +419,119 @@ class PropertyCustodian extends Controller {
 					($request->approved_middle_name ? $request->approved_middle_name . ' ' : '') .
 					$request->approved_last_name
 				));
+				$signaturePath = asset($request->requested_signature);
+       		    $signatureImage = $request->requested_signature ? '<img src="' . $signaturePath . '" width="150" height="75">' : '';
 				$needed = $request->purchase_order_id ? ($request->request_quantity - $request->release_supplies_qty) : null;
 		
 				return [
 					'requested_by' => $requestedBy,
+					'signature' => $signatureImage,
+					'item' => $request->name,
+					'quantity' => $request->request_quantity,
+					'release' => $request->release_supplies_qty,
+					'needed' => $needed,
+					'date' => Carbon::parse($request->date)->format('F j, Y'),
+					'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
+					'action' => $approveButton,
+				];
+			});
+		
+
+		return response()->json($datatable);
+	}
+
+	public function GetForNewReleaseData()
+	{
+		$gen_user = Auth::user()->id;
+
+		$user = User::find($gen_user);
+
+		$get_request_supplies = RequestSupplies::join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->join('users as request_user', 'request_supplies.requested_by', '=', 'request_user.id')
+			->join('person as request_person', 'request_user.person_id', '=', 'request_person.id')
+			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
+			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
+			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
+			->where('request_supplies.action_type',4)
+			->select(
+				'request_supplies.id',
+				'request_person.first_name as requested_first_name',
+				'request_person.middle_name as requested_middle_name',
+				'request_person.last_name as requested_last_name',
+				'request_person.signature as requested_signature',
+				'approve_person.first_name as approved_first_name',
+				'approve_person.middle_name as approved_middle_name',
+				'approve_person.last_name as approved_last_name',
+				'approve_person.signature as approved_signature',
+				'inventory_name.name',
+				'request_supplies.request_quantity',
+				'request_supplies.release_supplies_qty',
+				'request_supplies.date',
+				'request_supplies.action_type',
+				'request_supplies.is_purchase_order',
+				'purchase_order.status as po_status',
+				'purchase_order.id as purchase_order_id'
+			)
+			->orderBy('request_supplies.updated_at','desc')
+			->get();
+
+			$datatable = $get_request_supplies->map(function ($request) {
+				$statusText = ($request->action_type == 4) ? 'For Release' :
+					(($request->action_type == 5) ? 'For Pick Up' :
+					(($request->action_type == 6) ? 'Done Release' : ''));
+		
+				$statusBadgeClass = ($request->action_type == 4) ? 'badge-soft-warning' :
+					(($request->action_type == 5) ? 'badge-soft-success' :
+					(($request->action_type == 6) ? 'badge-soft-primary' : 'badge-soft-secondary'));
+		
+				if ($request->action_type == 6) {
+					if ($request->po_status == 1) {  
+						$approveButton = '<button type="button" class="btn btn-warning btn-sm text-white processPoBtn" 
+											data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+											<span class="fa fa-truck"></span> Process PO
+										</button>';
+					} else {
+						$approveButton = '<button type="button" class="btn btn-primary btn-sm text-white" disabled style="margin: 4px;">
+											<span class="fa fa-check"></span> Done Release
+										</button>';
+					}
+				} elseif ($request->action_type == 5) {
+					$approveButton = '<button type="button" class="btn btn-success btn-sm text-white forReleaseBtn" 
+										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+										<span class="fa fa-check"></span> For Pick Up
+									</button>';
+				} elseif ($request->is_purchase_order == 1){
+					$approveButton = '<button type="button" class="btn btn-warning btn-sm text-white approvedPoBtn" 
+											data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+											<span class="fa fa-box"></span> Approved PO
+										</button>';
+				}
+				 else {
+					$approveButton = '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
+										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+										<span class="fa fa-check"></span> Approve
+									</a>';
+				}
+		
+				$requestedBy = strtoupper(trim(
+					$request->requested_first_name . ' ' .
+					($request->requested_middle_name ? $request->requested_middle_name . ' ' : '') .
+					$request->requested_last_name
+				));
+		
+				$approvedBy = strtoupper(trim(
+					$request->approved_first_name . ' ' .
+					($request->approved_middle_name ? $request->approved_middle_name . ' ' : '') .
+					$request->approved_last_name
+				));
+				$signaturePath = asset($request->requested_signature);
+       		    $signatureImage = $request->requested_signature ? '<img src="' . $signaturePath . '" width="150" height="75">' : '';
+				$needed = $request->purchase_order_id ? ($request->request_quantity - $request->release_supplies_qty) : null;
+		
+				return [
+					'requested_by' => $requestedBy,
+					'signature' => $signatureImage,
 					'item' => $request->name,
 					'quantity' => $request->request_quantity,
 					'release' => $request->release_supplies_qty,
@@ -558,7 +675,14 @@ class PropertyCustodian extends Controller {
 			}
 	
 			$get_request_supplies = RequestSupplies::find($request->request_supplies_id);
-
+	
+			if (!$get_request_supplies) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'Request Supplies not found.'
+				]);
+			}
+	
 			$request_quantity = $get_request_supplies->request_quantity;
 		
 			$inventory = Inventory::where('id', $get_request_supplies->inventory_id)->first();
@@ -568,37 +692,28 @@ class PropertyCustodian extends Controller {
 					'message' => 'Inventory not found.'
 				]);
 			}
-
+	
 			$inv_quantity = $inventory->inv_quantity;
 			$purchase_order = PurchaseOrder::where('request_supplies_id', $request->request_supplies_id)
-			->where('status', 2)
-			->first();
+				->where('status', 2)
+				->first();
 		
-		if (!$purchase_order) {
+			if (!$purchase_order) {
+				$new_inv_quantity = max(0, $inv_quantity - $request_quantity);
 			
-			$new_inv_quantity = $inv_quantity - $request_quantity;
-		
-			if ($new_inv_quantity < 0) {
-				return response()->json([
-					'status' => 'failed',
-					'message' => 'Not enough inventory available.'
-				]);
-			}
-		
-			$inventory->inv_quantity = $new_inv_quantity;
-			$inventory->save();
-		}
-		
+				// if ($new_inv_quantity == 0 && $inv_quantity - $request_quantity < 0) {
+				// 	return response()->json([
+				// 		'status' => 'failed',
+				// 		'message' => 'Not enough inventory available.'
+				// 	]);
+				// }
 	
-	
-			if (!$get_request_supplies) {
-				return response()->json([
-					'status' => 'failed',
-					'message' => 'Request Supplies not found.'
-				]);
+				$inventory->inv_quantity = $new_inv_quantity;
+				$inventory->save();
 			}
+	
 			$get_request_supplies->action_type = 6;
-			$get_request_supplies->release_date = Carbon::now(); 
+			$get_request_supplies->release_date = Carbon::now();
 			$get_request_supplies->save();
 	
 			return response()->json([
@@ -615,6 +730,7 @@ class PropertyCustodian extends Controller {
 			]);
 		}
 	}
+	
 
 	public function ForApprovedPOSupplies(Request $request)
 	{

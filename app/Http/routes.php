@@ -66,7 +66,9 @@ Route::get('/admin/index', [
 
 Route::get('pc/inventory','PropertyCustodian@inventory');
 Route::get('pc/release_data','PropertyCustodian@GetReleaseData');
+Route::get('pc/new_release_data','PropertyCustodian@GetNewReleaseData');
 Route::get('pc/for_release_data','PropertyCustodian@GetForReleaseData');
+Route::get('pc/for_new_release_data','PropertyCustodian@GetForNewReleaseData');
 Route::post('pc/check_inventory','PropertyCustodian@checkInventory');
 Route::post('pc/approved_supplies','PropertyCustodian@GetApprovedRequest');
 Route::post('pc/for_release_supplies','PropertyCustodian@ForReleaseRequest');
