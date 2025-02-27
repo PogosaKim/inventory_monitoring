@@ -12,6 +12,9 @@
           <a class="nav-link {{ Request::is('dean/request_data') ? 'active' : '' }}" href="{{URL::to('dean/request_data')}}" role="button">
             <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">Approved Request</span></div>
           </a>
+          <a class="nav-link {{ Request::is('dean/new_request_data') ? 'active' : '' }}" href="{{URL::to('dean/new_request_data')}}" role="button">
+            <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">New Request</span></div>
+          </a>
           <a class="nav-link {{ Request::is('dean/request') ? 'active' : '' }}" href="{{URL::to('dean/request')}}" role="button">
             <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">Request Supplies</span></div>
           </a>

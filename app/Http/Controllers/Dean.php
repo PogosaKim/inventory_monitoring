@@ -28,6 +28,11 @@ class Dean extends Controller {
 		return view('dean.request_data');
 	}
 
+	public function GetNewData()
+	{
+		return view('dean.new_request_data');
+	}
+
 	public function request()
 	{
 		$gen_user = Auth::user()->person_id;
@@ -74,6 +79,82 @@ class Dean extends Controller {
 		->join('person','users.person_id','=','person.id')
 		->where('request_supplies.school_department_id',$user->school_department_id)
 		->where('request_supplies.user_role_id',$user->user_role_id)
+		->whereIn('request_supplies.action_type',[2,3,4,5,6])
+		->select('request_supplies.id','person.first_name','person.last_name','person.middle_name','inventory_name.name','request_supplies.request_quantity','request_supplies.date','request_supplies.action_type')
+		->orderBy('request_supplies.updated_at','asc')
+		->get();
+		// dd($get_request_supplies);
+
+
+		$datatable = $get_request_supplies->map(function ($request) {
+			switch ($request->action_type) {
+				case 1:
+					$statusText = 'Pending';
+					$statusBadgeClass = 'badge-soft-warning';
+					break;
+				case 2:
+					$statusText = 'Approved';
+					$statusBadgeClass = 'badge-soft-success';
+					break;
+				case 3:
+					$statusText = 'Approved by President';
+					$statusBadgeClass = 'badge-soft-info';
+					break;
+				case 4:
+					$statusText = 'Approved by Finance';
+					$statusBadgeClass = 'badge-soft-primary';
+					break;
+				case 5:
+					$statusText = 'Approved by Pick Up';
+					$statusBadgeClass = 'badge-soft-dark';
+					break;
+				case 6:
+					$statusText = 'Done Release';
+					$statusBadgeClass = 'badge-soft-success';
+					break;
+				default:
+					$statusText = 'Unknown';
+					$statusBadgeClass = 'badge-soft-secondary';
+					break;
+			}
+			$approveButton = in_array($request->action_type, [2, 3, 4, 5,6])
+            ? '<button type="button" class="btn btn-success btn-sm text-white" disabled 
+                style="margin: 4px;">
+                <span class="fa fa-check"></span> Approved
+              </button>'
+            : '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
+                data-request_supplies_id="' . $request->id . '" 
+                style="margin: 4px;">
+                <span class="fa fa-check"></span> Approve
+              </a>';
+			return [
+				'name' => strtoupper(trim($request->first_name . ' ' . ($request->middle ? $request->middle . ' ' : '') . $request->last_name)), 
+				'item' =>$request->name,
+				'quantity' =>$request->request_quantity,
+				'date' => Carbon::parse($request->date)->format('F j, Y'),
+				'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
+				'action' => $approveButton,
+			];
+		});
+	
+		return response()->json($datatable);
+
+
+	}
+
+	public function GetNewRequest()
+	{
+		$gen_user = Auth::user()->id;
+		
+		$user = User::find($gen_user);
+		// dd($user);
+		$get_request_supplies = RequestSupplies::join('inventory','request_supplies.inventory_id','=','inventory.id')
+		->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
+		->join('users','request_supplies.requested_by','=','users.id')
+		->join('person','users.person_id','=','person.id')
+		->where('request_supplies.school_department_id',$user->school_department_id)
+		->where('request_supplies.user_role_id',$user->user_role_id)
+		->where('request_supplies.action_type',1)
 		->select('request_supplies.id','person.first_name','person.last_name','person.middle_name','inventory_name.name','request_supplies.request_quantity','request_supplies.date','request_supplies.action_type')
 		->orderBy('request_supplies.updated_at','asc')
 		->get();
@@ -137,6 +218,7 @@ class Dean extends Controller {
 	}
 
 
+
 	public function GetApprovedRequest(Request $request)
 {
     try {
@@ -177,6 +259,53 @@ class Dean extends Controller {
         ]);
     }
 }
+
+public function GetApprovedAllRequest(Request $request)
+{
+    try {
+        $gen_user = Auth::id();
+        $user = User::find($gen_user);
+
+        if (!$user) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'User not found.'
+            ]);
+        }
+
+        // Retrieve all pending requests for the user's department and role
+        $updated_requests = RequestSupplies::where('school_department_id', $user->school_department_id)
+            ->where('user_role_id', $user->user_role_id)
+            ->where('action_type', 1) // Only update pending requests
+            ->update([
+                'approved_by' => $user->id,
+                'action_type' => 2, // Approved status
+                'updated_at' => date('Y-m-d H:i:s') // Laravel 5.0 doesn't support now()
+            ]);
+
+        if ($updated_requests == 0) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No pending requests found to approve.'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'All pending request supplies approved successfully.'
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'failed',
+            'message' => 'An error occurred while approving the requests.',
+            'error' => $e->getMessage(),
+            'line' => $e->getLine()
+        ]);
+    }
+}
+
+
 
 public function Createrequest()
 {
@@ -221,13 +350,13 @@ public function Createrequest()
 	{
 		$gen_user = Auth::user()->id;
 		$person = Person::find($gen_user);
-		// dd($gen_user);
+
 		$my_request_supplies = RequestSupplies::where('request_supplies.requested_by', $gen_user)
 			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
 			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
-			->select('inventory_name.name', 'inventory.inv_unit', 'request_supplies.request_quantity', 'inventory.inv_brand', 'request_supplies.action_type')
+			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
+			->select('inventory_name.name', 'inventory.inv_unit', 'request_supplies.request_quantity', 'inventory.inv_brand', 'request_supplies.action_type','request_supplies.release_supplies_qty','purchase_order.id as purchase_order_id')
 			->get();
-		// dd($my_request_supplies);
 
 		return view('dean.track_request', compact('my_request_supplies'));
 	}

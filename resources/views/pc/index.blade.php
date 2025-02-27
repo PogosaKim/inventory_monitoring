@@ -173,7 +173,7 @@ function checkStatusRequest() {
                     allowOutsideClick: false
                 }).then((result) => {
                     if (result.isConfirmed) {
-						window.location.href = "{{ url('pc/release_data') }}";
+						window.location.href = "{{ url('pc/new_release_data') }}";
                     }
                 });
             });

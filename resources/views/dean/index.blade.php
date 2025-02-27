@@ -152,42 +152,44 @@
 	checkStatusRequest();
     // setInterval(checkStatus, 10000); // Auto-check every 10 seconds
 });
+var requestDataUrl = "{{ url('dean/track_request') }}";
+function checkStatus() {
+    $.get('dean/check_status').then(function(res) {
+      if (res.check_status_request.length !== 0) {
+            $.each(res.check_status_request, function(index, item) {
+                let title = "";
+                let message = "Your request has been updated.";
 
-// function checkStatus() {
-//     $.get('dean/check_status').then(function(res) {
-//         if (res.check_status_request.length !== 0) {
-//             $.each(res.check_status_request, function(index, item) {
-//                 let title = "";
-//                 let message = "Your request has been updated.";
+                switch (item.action_type) {
+                    case 3:
+                        title = "Approved by President";
+                        message = "Your request has been approved by the President.";
+                        break;
+                    case 4:
+                        title = "Approved by Finance";
+                        message = "Your request has been approved by Finance.";
+                        break;
+                    case 5:
+                        title = "Ready for Pickup";
+                        message = "Your request is ready for pickup.";
+                        break;
+                }
 
-//                 switch (item.action_type) {
-//                     case 3:
-//                         title = "Approved by President";
-//                         message = "Your request has been approved by the President.";
-//                         break;
-//                     case 4:
-//                         title = "Approved by Finance";
-//                         message = "Your request has been approved by Finance.";
-//                         break;
-//                     case 5:
-//                         title = "Ready for Pickup";
-//                         message = "Your request is ready for pickup.";
-//                         break;
-//                 }
-
-//                 Swal.fire({
-//                     title: title,
-//                     html: message,
-//                     icon: 'success',
-//                     confirmButtonText: 'OK',
-//                     timer: 6000, // Auto close after 6 seconds
-//                     showCancelButton: false,
-//                     allowOutsideClick: false
-//                 });
-//             });
-//         }
-//     });
-// }
+                Swal.fire({
+                    title: title,
+                    html: message,
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    allowOutsideClick: false
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = requestDataUrl; 
+                    }
+                });
+            });
+        }
+    });
+}
 
 function checkStatusRequest() {
     $.get('dean/check_status_request').then(function(res) {
@@ -203,13 +205,16 @@ function checkStatusRequest() {
                     allowOutsideClick: false
                 }).then((result) => {
                     if (result.isConfirmed) {
-						window.location.href = "{{ url('dean/request_data') }}";
+						window.location.href = "{{ url('dean/new_request_data') }}";
                     }
                 });
             });
         }
     });
 }
+
+
+
 
 
 </script>

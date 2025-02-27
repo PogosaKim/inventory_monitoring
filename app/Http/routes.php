@@ -104,8 +104,11 @@ Route::get('teacher/teacher/check_status','Teacher@CheckedStatusRequest');
 
 // Dean
 Route::get('dean/request_data','Dean@GetData');
+Route::get('dean/new_request_data','Dean@GetNewData');
 Route::get('dean/get_request','Dean@GetRequest');
+Route::get('dean/new_get_request','Dean@GetNewRequest');
 Route::post('dean/approved_supplies','Dean@GetApprovedRequest');
+Route::post('dean/approve_all_supplies','Dean@GetApprovedAllRequest');
 Route::get('dean/request','Dean@request');
 Route::post('dean/create_request','Dean@Createrequest');
 Route::get('dean/track_request','Dean@GetTrackingRequest');
