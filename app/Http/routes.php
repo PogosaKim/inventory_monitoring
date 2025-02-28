@@ -63,7 +63,7 @@ Route::get('/admin/index', [
 
 
 //Property Custodian
-
+Route::get('pc/inventory_name','PropertyCustodian@inventoryName');
 Route::get('pc/inventory','PropertyCustodian@inventory');
 Route::get('pc/release_data','PropertyCustodian@GetReleaseData');
 Route::get('pc/new_release_data','PropertyCustodian@GetNewReleaseData');
@@ -74,6 +74,7 @@ Route::post('pc/approved_supplies','PropertyCustodian@GetApprovedRequest');
 Route::post('pc/for_release_supplies','PropertyCustodian@ForReleaseRequest');
 Route::post('pc/for_approved_po_supplies','PropertyCustodian@ForApprovedPOSupplies');
 Route::post('pc/for_process_po','PropertyCustodian@ForProcessPO');
+Route::post('pc/create_inventory_name','PropertyCustodian@InventoryNameCreate');
 Route::post('pc/create_inventory','PropertyCustodian@InventoryCreate');
 Route::get('pc/get_inventory','PropertyCustodian@GetInventory');
 Route::post('pc/update_inventory','PropertyCustodian@InventoryUpdate');
@@ -120,7 +121,10 @@ Route::get('dean/dean/check_status_request','Dean@CheckedStatusRequestData');
 // President 
 
 Route::get('president/request_data','SchoolPresident@GetData');
+Route::get('president/new_request_data','SchoolPresident@GetNewData');
 Route::get('president/get_request','SchoolPresident@GetRequest');
+Route::get('president/new_get_request','SchoolPresident@GetNewRequest');
+Route::post('president/approve_all_supplies','SchoolPresident@GetApprovedAllRequest');
 Route::post('president/approved_supplies','SchoolPresident@GetApprovedRequest');
 Route::get('school_president/president/check_status_request','SchoolPresident@CheckedStatusRequestData');
 
@@ -128,8 +132,11 @@ Route::get('school_president/president/check_status_request','SchoolPresident@Ch
 // Finance 
 
 Route::get('finance/request_data','Finance@GetData');
+Route::get('finance/new_request_data','Finance@GetNewData');
 Route::get('finance/get_request','Finance@GetRequest');
+Route::get('finance/new_get_request','Finance@GetNewRequest');
 Route::post('finance/approved_supplies','Finance@GetApprovedRequest');
+Route::post('finance/approve_all_supplies','Finance@GetApprovedAllRequest');
 Route::get('finance/finance/check_status_request','Finance@CheckedStatusRequestData');
 
 

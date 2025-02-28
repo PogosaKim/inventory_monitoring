@@ -29,6 +29,11 @@ class PropertyCustodian extends Controller {
 	{
 		return view('pc.index');
 	}
+
+	public function inventoryName()
+	{
+		return view('pc.inventory_name');
+	}
 	
 
 	public function inventory()
@@ -99,6 +104,20 @@ class PropertyCustodian extends Controller {
 				'error' => $e->getMessage(),
 			]);
 		}
+	}
+
+	public function InventoryNameCreate()
+	{
+		$inventory_name = \Request::get('inventory_name');
+		$inventory_desc = \Request::get('inventory_desc');
+
+		$inventory = InventoryName::create([
+			'name' => $inventory_name,
+			'description' => $inventory_desc,
+		]);
+
+
+		return response()->json(['success' => true, 'inventory' => $inventory]);
 	}
 
 	public function InventoryCreate()
@@ -347,7 +366,7 @@ class PropertyCustodian extends Controller {
 			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
 			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
-			->whereIn('request_supplies.action_type', [5,6])
+			->where('request_supplies.action_type',6)
 			->select(
 				'request_supplies.id',
 				'request_person.first_name as requested_first_name',
@@ -453,7 +472,7 @@ class PropertyCustodian extends Controller {
 			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
 			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
-			->where('request_supplies.action_type',4)
+			->whereIn('request_supplies.action_type',[4,5])
 			->select(
 				'request_supplies.id',
 				'request_person.first_name as requested_first_name',

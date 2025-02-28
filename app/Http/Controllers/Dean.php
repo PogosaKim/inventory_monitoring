@@ -273,14 +273,13 @@ public function GetApprovedAllRequest(Request $request)
             ]);
         }
 
-        // Retrieve all pending requests for the user's department and role
         $updated_requests = RequestSupplies::where('school_department_id', $user->school_department_id)
             ->where('user_role_id', $user->user_role_id)
-            ->where('action_type', 1) // Only update pending requests
+            ->where('action_type', 1) 
             ->update([
                 'approved_by' => $user->id,
-                'action_type' => 2, // Approved status
-                'updated_at' => date('Y-m-d H:i:s') // Laravel 5.0 doesn't support now()
+                'action_type' => 2,
+                'updated_at' => date('Y-m-d H:i:s') 
             ]);
 
         if ($updated_requests == 0) {

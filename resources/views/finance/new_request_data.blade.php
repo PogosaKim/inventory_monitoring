@@ -42,7 +42,7 @@
 			</a>
 		</div>
 
-		@include('dean_sidebar');
+		@include('finance_sidebar');
 
 	</nav>
 
@@ -58,7 +58,7 @@
 			<ul class="navbar-nav navbar-nav-icons ms-auto flex-row align-items-center">
 				<li class="nav-item">
                     @if (Auth::check())
-                        <p class="dropdown-item">Hi Dean, {{ Auth::user()->name }}</p>
+                        <p class="dropdown-item">Hi Finance, {{ Auth::user()->name }}</p>
                     @endif
 					<div class="theme-control-toggle fa-icon-wait px-2"><input
 							class="form-check-input ms-0 theme-control-toggle-input" id="themeControlToggle"
@@ -133,7 +133,7 @@
           <div class="card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="card-title">Request</h5>
+                    <h5 class="card-title">New Request</h5>
                     <button id="approveAllBtn" class="btn btn-success btn-sm">
                         <span class="fa fa-check"></span> Approve All
                     </button>
@@ -175,7 +175,7 @@ $(document).ready(function() {
   
   oTable = $("#requestTable").DataTable({
       ajax: {
-          url: "{{ url('dean/new_get_request') }}",
+          url: "{{ url('finance/new_get_request') }}",
           type: "GET",
           data: function(d) { 
           },
@@ -183,7 +183,7 @@ $(document).ready(function() {
       },
       columns: [
           {
-              data: 'name'
+              data: 'requested_by'
           },
           {
               data: 'item'
@@ -206,7 +206,7 @@ $(document).ready(function() {
           
       });
 
-    $("#approveAllBtn").on("click", function() {
+      $("#approveAllBtn").on("click", function() {
     let pendingRequests = [];
 
     // Get all pending requests from the table
@@ -234,10 +234,10 @@ $(document).ready(function() {
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: "{{ url('dean/approve_all_supplies') }}",
+                    url: "{{ url('finance/approve_all_supplies') }}",
                     type: "POST",
                     data: {
-                        request_supplies_ids: pendingRequests,
+                        request_supplies_ids: pendingRequests, 
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
@@ -267,9 +267,11 @@ $(document).ready(function() {
                         console.log(xhr.responseText);
                     }
                 });
+
             }
         });
     });
+
 
 
       oTable.on("click", ".approvedBtn", function() {
@@ -286,7 +288,7 @@ $(document).ready(function() {
             }).then((result) => {
                 if (result.isConfirmed) {
                     $.ajax({
-                        url: "{{ url('dean/approved_supplies') }}",
+                        url: "{{ url('finance/approved_supplies') }}",
                         type: "POST",
                         data: {
                           request_supplies_id: request_supplies_id,

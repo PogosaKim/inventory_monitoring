@@ -12,6 +12,9 @@
           <a class="nav-link {{ Request::is('finance/request_data') ? 'active' : '' }}" href="{{URL::to('finance/request_data')}}" role="button">
             <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">Approved Request</span></div>
           </a>
+          <a class="nav-link {{ Request::is('finance/new_request_data') ? 'active' : '' }}" href="{{URL::to('finance/new_request_data')}}" role="button">
+            <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">New Request</span></div>
+          </a>
         </li>
       </ul>
     </div>
