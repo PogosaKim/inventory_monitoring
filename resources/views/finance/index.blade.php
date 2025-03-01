@@ -166,7 +166,7 @@ function checkStatusRequest() {
                     allowOutsideClick: false
                 }).then((result) => {
                     if (result.isConfirmed) {
-						window.location.href = "{{ url('finance/request_data') }}";
+						window.location.href = "{{ url('finance/new_request_data') }}";
                     }
                 });
             });

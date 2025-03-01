@@ -50,9 +50,12 @@ class PropertyCustodian extends Controller {
 		$person = Person::find($gen_user);
 		// dd($person);
 
-			$role = Roles::where('id', 3)
-             ->select('id', 'name')
-             ->first();
+		$role = Roles::where('id', 3)
+			->select('id', 'name')
+			->first();
+		
+		$finance_head = Person::where('person.id',24)->first();
+		$pc = Person::where('person.id',1)->first();
 		
 
 
@@ -63,7 +66,7 @@ class PropertyCustodian extends Controller {
 		->get();
 
 
-		return view('pc.purchase_order',compact('role','teacher','person','inventory_list'));
+		return view('pc.purchase_order',compact('role','teacher','person','inventory_list','finance_head','pc'));
 	}
 
 	public function Createrequest()
@@ -84,7 +87,8 @@ class PropertyCustodian extends Controller {
 					'date' => $date,
 					'request_quantity' => $request_quantities[$index],
 					'action_type' => 3 ,
-					'is_purchase_order' => 1
+					'is_purchase_order' => 1,
+					'is_request_purchase_order' => 1
 				]);
 			}
 
@@ -353,6 +357,10 @@ class PropertyCustodian extends Controller {
 		return view('pc.new_request_data');
 	}
 
+	public function GetPurchaseRecords(){
+		return view('pc.po_request_data');
+	}
+
 	public function GetForReleaseData()
 	{
 		$gen_user = Auth::user()->id;
@@ -367,6 +375,127 @@ class PropertyCustodian extends Controller {
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
 			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
 			->where('request_supplies.action_type',6)
+			// ->where(function($query) {
+			// 	$query->where('request_supplies.is_request_purchase_order', '!=', 2)
+			// 		  ->orWhereNull('request_supplies.is_request_purchase_order');
+			// })	
+			->select(
+				'request_supplies.id',
+				'request_person.first_name as requested_first_name',
+				'request_person.middle_name as requested_middle_name',
+				'request_person.last_name as requested_last_name',
+				'request_person.signature as requested_signature',
+				'approve_person.first_name as approved_first_name',
+				'approve_person.middle_name as approved_middle_name',
+				'approve_person.last_name as approved_last_name',
+				'approve_person.signature as approved_signature',
+				'inventory_name.name',
+				'request_supplies.request_quantity',
+				'request_supplies.release_supplies_qty',
+				'request_supplies.date',
+				'request_supplies.action_type',
+				'request_supplies.is_purchase_order',
+				'purchase_order.status as po_status',
+				'purchase_order.id as purchase_order_id'
+			)
+			->orderBy('request_supplies.updated_at','desc')
+			->get();
+
+			$datatable = $get_request_supplies->map(function ($request) {
+				$statusText = ($request->action_type == 4) ? 'For Release' :
+					(($request->action_type == 5) ? 'For Pick Up' :
+					(($request->action_type == 6) ? 'Done Release' : ''));
+		
+				$statusBadgeClass = ($request->action_type == 4) ? 'badge-soft-warning' :
+					(($request->action_type == 5) ? 'badge-soft-success' :
+					(($request->action_type == 6) ? 'badge-soft-primary' : 'badge-soft-secondary'));
+		
+				if ($request->action_type == 6) {
+					// if ($request->po_status == 1) {  
+					// 	$approveButton = '<button type="button" class="btn btn-warning btn-sm text-white processPoBtn" 
+					// 						data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+					// 						<span class="fa fa-truck"></span> Process PO
+					// 					</button>';
+					// } else {
+					// 	$approveButton = '<button type="button" class="btn btn-primary btn-sm text-white" disabled style="margin: 4px;">
+					// 						<span class="fa fa-check"></span> Done Release
+					// 					</button>';
+					// }
+					$approveButton = '<button type="button" class="btn btn-primary btn-sm text-white" disabled style="margin: 4px;">
+											<span class="fa fa-check"></span> Done Release
+										</button>';
+				} elseif ($request->action_type == 5) {
+					$approveButton = '<button type="button" class="btn btn-success btn-sm text-white forReleaseBtn" 
+										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+										<span class="fa fa-check"></span> For Pick Up
+									</button>';
+				} elseif ($request->is_purchase_order == 1){
+					$approveButton = '<button type="button" class="btn btn-warning btn-sm text-white approvedPoBtn" 
+											data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+											<span class="fa fa-box"></span> Approved PO
+										</button>';
+				}
+				 else {
+					$approveButton = '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
+										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
+										<span class="fa fa-check"></span> Approve
+									</a>';
+				}
+		
+				$requestedBy = strtoupper(trim(
+					$request->requested_first_name . ' ' .
+					($request->requested_middle_name ? $request->requested_middle_name . ' ' : '') .
+					$request->requested_last_name
+				));
+		
+				$approvedBy = strtoupper(trim(
+					$request->approved_first_name . ' ' .
+					($request->approved_middle_name ? $request->approved_middle_name . ' ' : '') .
+					$request->approved_last_name
+				));
+				$signaturePath = asset($request->requested_signature);
+       		    $signatureImage = $request->requested_signature ? '<img src="' . $signaturePath . '" width="150" height="75">' : '';
+				$needed = $request->purchase_order_id ? ($request->request_quantity - $request->release_supplies_qty) : null;
+		
+				return [
+					'requested_by' => $requestedBy,
+					'signature' => $signatureImage,
+					'item' => $request->name,
+					'quantity' => $request->request_quantity,
+					'release' => $request->release_supplies_qty,
+					'needed' => $needed,
+					'date' => Carbon::parse($request->date)->format('F j, Y'),
+					'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
+					'action' => $approveButton,
+				];
+			});
+		
+
+		return response()->json($datatable);
+	}
+
+	public function GetForNewReleaseData()
+	{
+		$gen_user = Auth::user()->id;
+
+		$user = User::find($gen_user);
+
+		$get_request_supplies = RequestSupplies::join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->join('users as request_user', 'request_supplies.requested_by', '=', 'request_user.id')
+			->join('person as request_person', 'request_user.person_id', '=', 'request_person.id')
+			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
+			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
+			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
+			->whereIn('request_supplies.action_type',[4,5])
+			->where(function($query) {
+				$query->where('request_supplies.is_request_purchase_order', '!=', 2)
+					  ->orWhereNull('request_supplies.is_request_purchase_order');
+			})
+			->where(function ($query) {
+				$query->where('request_supplies.action_type', '!=', 5)
+					  ->orWhereNull('purchase_order.id');
+			})
 			->select(
 				'request_supplies.id',
 				'request_person.first_name as requested_first_name',
@@ -459,7 +588,7 @@ class PropertyCustodian extends Controller {
 		return response()->json($datatable);
 	}
 
-	public function GetForNewReleaseData()
+	public function GetPurchaseOrderReleaseData()
 	{
 		$gen_user = Auth::user()->id;
 
@@ -472,7 +601,28 @@ class PropertyCustodian extends Controller {
 			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
 			->leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
-			->whereIn('request_supplies.action_type',[4,5])
+			->where(function ($query) {
+				$query->whereNotIn('request_supplies.action_type', [4, 5])
+					  ->orWhere(function ($query) {
+						  $query->where('request_supplies.action_type', 4)
+								->whereNotNull('request_supplies.is_request_purchase_order')
+								->where('request_supplies.is_request_purchase_order', 2);
+					  })
+					  ->orWhere(function ($query) {
+						$query->where('request_supplies.action_type', 5)
+							  ->whereNotNull('request_supplies.purchase_order_id');
+					});
+			})
+			->where(function ($query) {
+				$query->where('request_supplies.action_type', '!=', 6)
+					  ->orWhere(function ($query) {
+						  $query->where('request_supplies.action_type', 6)
+								->where('purchase_order.status', 1);
+					  });
+			})
+			
+			
+			
 			->select(
 				'request_supplies.id',
 				'request_person.first_name as requested_first_name',
@@ -527,9 +677,9 @@ class PropertyCustodian extends Controller {
 										</button>';
 				}
 				 else {
-					$approveButton = '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
+					$approveButton = '<a type="button" class="btn btn-success btn-sm text-white approvedBtn disabled" 
 										data-request_supplies_id="' . $request->id . '" style="margin: 4px;">
-										<span class="fa fa-check"></span> Approve
+										<span class="fa fa-check"></span> Waiting for Approval
 									</a>';
 				}
 		
@@ -717,7 +867,7 @@ class PropertyCustodian extends Controller {
 				->where('status', 2)
 				->first();
 		
-			if (!$purchase_order) {
+			if ($purchase_order) {
 				$new_inv_quantity = max(0, $inv_quantity - $request_quantity);
 			
 				// if ($new_inv_quantity == 0 && $inv_quantity - $request_quantity < 0) {
@@ -861,7 +1011,7 @@ class PropertyCustodian extends Controller {
 	
 
 			$get_request_supplies->release_supplies_qty += $needed_quantity;
-			$get_request_supplies->action_type = 5;
+			$get_request_supplies->action_type = 6;
 			$get_request_supplies->save();
 	
 			return response()->json([

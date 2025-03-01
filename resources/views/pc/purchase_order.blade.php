@@ -206,42 +206,75 @@
                 </div>
                 <div class="row justify-content-center">
                     <div class="col-md-2 text-center">
-                        <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
-                        @if (!empty($person->signature))
-                            <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
-                        @else
-                            <p>No signature available</p>
-                        @endif
+                        <p>Requested by: </p>
+                        TEACHER 
                         <hr style="width: 50%; border-color: #333; margin: 10px auto;">
                     </div>
                     <div class="col-md-2 text-center">
-                        <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
-                        @if (!empty($person->signature))
-                            <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
-                        @else
-                            <p>No signature available</p>
-                        @endif
+                        <p>Recommending Approval: </p>
+                        DEAN
                         <hr style="width: 50%; border-color: #333; margin: 10px auto;">
                     </div>
                     <div class="col-md-2 text-center">
-                        <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
-                        @if (!empty($person->signature))
-                            <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
-                        @else
-                            <p>No signature available</p>
-                        @endif
+                        <p>Approved By: </p>
+                        SP / FH
                         <hr style="width: 50%; border-color: #333; margin: 10px auto;">
                     </div>
                     <div class="col-md-2 text-center">
-                        <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
-                        @if (!empty($person->signature))
-                            <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
-                        @else
-                            <p>No signature available</p>
-                        @endif
+                        <p>Recieved By:</p>
+                        PC
                         <hr style="width: 50%; border-color: #333; margin: 10px auto;">
                     </div>
                 </div>
+
+                <div class="row justify-content-between">
+                    <div class="col-md-2 text-center">
+                        <p>Confirmed as to Budget:</p>
+                    
+                        @if (!empty($finance_head->signature))
+                            <div style="display: flex; justify-content: center; margin-top: 10px;">
+                                <img src="{{ asset($person->signature) }}" alt="HR Signature" 
+                                     style="width: 60%; height: auto;">
+                            </div>
+                        @else
+                            <p></p>
+                        @endif
+                    
+                        <b style="display: block; margin-top: 5px;">
+                            @if(isset($finance_head) && $finance_head)
+                            {{ $finance_head->last_name }}, {{ $finance_head->first_name }} {{ $finance_head->middle_name }}
+                        @else
+                            
+                        @endif
+                        </b>
+                    
+                        <hr style="width: 60%; border: 1px solid #333; margin: 5px auto;">
+                    
+                        <p style="margin-top: -5px;">Finance Head</p>
+                    </div>
+                    
+                    <div class="col-md-2 text-center">
+                        <p>Received for P.O:</p>
+                        @if (!empty($pc->signature))
+                            <div style="display: flex; justify-content: center; margin-top: 10px;">
+                                <img src="{{ asset($person->signature) }}" alt="HR Signature" 
+                                     style="width: 60%; height: auto;">
+                            </div>
+                        @else
+                            <p></p>
+                        @endif
+                    
+                        <b style="display: block; margin-top: 5px;">
+                            {{ $pc->last_name }}, {{ $pc->first_name }} {{ $pc->middle_name }}
+                        </b>
+                    
+                        <hr style="width: 60%; border: 1px solid #333; margin: 5px auto;">
+                    
+                        <p style="margin-top: -5px;">Properly Custodian</p>
+                    </div>
+                </div>
+
+              
                 
                 
                 

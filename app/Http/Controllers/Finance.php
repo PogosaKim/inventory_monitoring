@@ -30,6 +30,11 @@ class Finance extends Controller {
 	{
 		return view('finance.new_request_data');
 	}
+	
+	public function GetPurchaseOrderData()
+	{
+		return view('finance.purchase_data');
+	}
 
 	public function GetRequest()
 	{
@@ -136,6 +141,10 @@ class Finance extends Controller {
 			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
 			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
 			->where('request_supplies.action_type', 3)
+			->where(function($query) {
+				$query->where('request_supplies.is_request_purchase_order', 0)
+					  ->orWhereNull('request_supplies.is_request_purchase_order');
+			})
 			->select(
 				'request_supplies.id',
 				'request_person.first_name as requested_first_name',
@@ -185,6 +194,73 @@ class Finance extends Controller {
 					<span class="fa fa-check"></span> For Release
 				</button>'
 				: '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
+					data-request_supplies_id="' . $request->id . '" 
+					style="margin: 4px;">
+					<span class="fa fa-check"></span> Approve
+				</a>';
+
+			$requestedBy = strtoupper(trim(
+				$request->requested_first_name . ' ' . 
+				($request->requested_middle_name ? $request->requested_middle_name . ' ' : '') . 
+				$request->requested_last_name
+			));
+
+			$approvedBy = strtoupper(trim(
+				$request->approved_first_name . ' ' . 
+				($request->approved_middle_name ? $request->approved_middle_name . ' ' : '') . 
+				$request->approved_last_name
+			));
+
+			return [
+				'requested_by' => $requestedBy,
+				'item' => $request->name,
+				'quantity' => $request->request_quantity,
+				'date' => Carbon::parse($request->date)->format('F j, Y'),
+				'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
+				'action' => $approveButton,
+			];
+		});
+
+		return response()->json($datatable);
+	}
+
+
+	public function GetNewPurchaseRequest(){
+		$gen_user = Auth::user()->id;
+
+		$user = User::find($gen_user);
+
+		$get_request_supplies = RequestSupplies::join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->join('users as request_user', 'request_supplies.requested_by', '=', 'request_user.id')
+			->join('person as request_person', 'request_user.person_id', '=', 'request_person.id')
+			->leftJoin('users as approve_user', 'request_supplies.approved_by', '=', 'approve_user.id')
+			->leftJoin('person as approve_person', 'approve_user.person_id', '=', 'approve_person.id')
+			->where('request_supplies.is_request_purchase_order', 1)
+			->select(
+				'request_supplies.id',
+				'request_person.first_name as requested_first_name',
+				'request_person.middle_name as requested_middle_name',
+				'request_person.last_name as requested_last_name',
+				'approve_person.first_name as approved_first_name',
+				'approve_person.middle_name as approved_middle_name',
+				'approve_person.last_name as approved_last_name',
+				'inventory_name.name',
+				'request_supplies.request_quantity',
+				'request_supplies.date',
+				'request_supplies.action_type',
+				'request_supplies.is_request_purchase_order'
+			)
+			->orderBy('request_supplies.updated_at','desc')
+			->get();
+
+		$datatable = $get_request_supplies->map(function ($request) {
+				if ($request->is_request_purchase_order == 1) {
+					$statusText = 'Purchase Order';
+					$statusBadgeClass = 'badge-soft-success';
+				}
+
+			$approveButton = '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
 					data-request_supplies_id="' . $request->id . '" 
 					style="margin: 4px;">
 					<span class="fa fa-check"></span> Approve
@@ -265,6 +341,7 @@ class Finance extends Controller {
 
         if ($requesting_user->user_role_id == 1) {
             $get_request_supplies->is_purchase_order = 1;
+			$get_request_supplies->is_request_purchase_order = 2;
         }
 
         $get_request_supplies->save();
