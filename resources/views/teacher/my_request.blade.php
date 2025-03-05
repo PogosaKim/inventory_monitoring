@@ -33,16 +33,17 @@
 				{{-- <button class="btn navbar-toggler-humburger-icon navbar-vertical-toggle" data-bs-toggle="tooltip"
 					data-bs-placement="left" title="Toggle Navigation"><span class="navbar-toggle-icon"><span
 							class="toggle-line"></span></span></button> --}}
-			</div><a class="navbar-brand" href="{{URL::to('dean/index')}}">
+			</div><a class="navbar-brand" href="#">
 				<div class="d-flex align-items-center py-3">
 					<span class="font-sans-serif" style="color:#DE9208; font-size:13px">
-						CUSTODIAN OFFICE TRACK & REQUEST
+                        CUSTODIAN OFFICE 
+                        <br> TRACK & REQUEST
 					</span>
 				</div>
 			</a>
 		</div>
 
-		@include('admin_sidebar');
+		@include('teacher_sidebar');
 
 	</nav>
 
@@ -58,7 +59,7 @@
 			<ul class="navbar-nav navbar-nav-icons ms-auto flex-row align-items-center">
 				<li class="nav-item">
                     @if (Auth::check())
-                        <p class="dropdown-item">Hi Admin, {{ Auth::user()->name }}</p>
+                        <p class="dropdown-item">Hi Teacher, {{ Auth::user()->name }}</p>
                     @endif
 					<div class="theme-control-toggle fa-icon-wait px-2"><input
 							class="form-check-input ms-0 theme-control-toggle-input" id="themeControlToggle"
@@ -130,16 +131,35 @@
 		</script>
 
 		<input type="hidden" name="_token" value="{{{ csrf_token() }}}" />
-
-		    <div class="card mb-3">
+          <div class="card">
             <div class="card-body">
-              <div class="row flex-between-center">
-                <div class="col-md">
-                  <h5 class="mb-2 mb-md-0">Welcome Back Admin!</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title">My Request</h5>
                 </div>
-              </div>
+                <table id="requestTable" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>UNIT PRICE</th>
+                            <th>TOTAL AMOUNT</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                   
+                    </tbody>
+                </table>
             </div>
-          </div>
+        </div>
+
+
+       
+
+
+        
+          
+		  
 
 
 
@@ -148,34 +168,48 @@
 @section('scripts')
 <script>
  var oTable;
-//  $(document).ready(function() {
-// 	checkStatusRequest();
+$(document).ready(function() {
+  
+  oTable = $("#requestTable").DataTable({
+      ajax: {
+          url: "{{ url('teacher/my_request_data') }}",
+          type: "GET",
+          data: function(d) { 
+          },
+          dataSrc: "",
+      },
+      columns: [
+          {
+              data: 'item'
+          },
+          {
+              data: 'quantity'
+          },
+          {
+              data: 'inv_unit_price'
+          },
+          {
+              data: 'inv_unit_total_price'
+          },
+          {
+              data: 'date'
+          }
 
-// });
+          ],
+          
+      });
 
 
-// function checkStatusRequest() {
-//     $.get('dean/check_status_request').then(function(res) {
-//         if (res.check_status_request.length !== 0) {
-//             $.each(res.check_status_request, function(index, item) {
-//                 Swal.fire({
-//                     title: "New Request for Approval",
-//                     html: "A new request for <b>" + item.item_name + "</b> needs your approval.",
-//                     icon: 'info',
-//                     confirmButtonText: 'Review Now',
-//                     showCancelButton: true,
-//                     cancelButtonText: 'Later',
-//                     allowOutsideClick: false
-//                 }).then((result) => {
-//                     if (result.isConfirmed) {
-// 						window.location.href = "{{ url('dean/request_data') }}";
-//                     }
-//                 });
-//             });
-//         }
-//     });
-// }
 
+      oTable.on("click", ".viewDetail", function() {
+        const request_supplies_id = $(this).data("request_supplies_id");
+        const request_supplies_code = $(this).data("request_supplies_code");
+        const url = "{{ url('teacher/my_request_data_form') }}?request_supplies_id=" + request_supplies_id + "&request_supplies_code=" + request_supplies_code;
+        window.open(url);
+    });
+
+
+});
 
 </script>
 

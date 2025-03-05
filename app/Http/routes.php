@@ -94,15 +94,16 @@ Route::post('pc/barcode_upload','PropertyCustodian@uploadBarcode');
 
 
 
-
-
-
 // Teacher
 
 Route::get('teacher/request','Teacher@request');
 Route::post('teacher/create_request','Teacher@Createrequest');
 Route::get('teacher/track_request','Teacher@GetTrackingRequest');
 Route::get('teacher/teacher/check_status','Teacher@CheckedStatusRequest');
+
+Route::get('teacher/my_request','Teacher@my_request');
+Route::get('teacher/my_request_data','Teacher@my_request_data');
+Route::get('teacher/my_request_data_form','Teacher@my_request_data_form');
 
 
 

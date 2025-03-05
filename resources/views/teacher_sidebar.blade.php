@@ -15,6 +15,9 @@
           <a class="nav-link {{ Request::is('teacher/track_request') ? 'active' : '' }}" href="{{URL::to('teacher/track_request')}}" role="button">
             <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">Track Request</span></div>
           </a>
+          <a class="nav-link {{ Request::is('teacher/my_request') ? 'active' : '' }}" href="{{URL::to('teacher/my_request')}}" role="button">
+            <div class="d-flex align-items-center"><span class="nav-link-icon"><span class="fas fa-calendar"></span></span><span class="nav-link-text ps-1">My Request</span></div>
+          </a>
         </li>
       </ul>
     </div>
