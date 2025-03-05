@@ -155,3 +155,4 @@ Route::get('admin/reset_password','Admin@GetResetPassword');
 Route::post('find_reset_password', 'Admin@find_reset_password');
 Route::post('update_reset_password', 'Admin@update_reset_password');
 
+Route::get('test_email','EmailController@index');
