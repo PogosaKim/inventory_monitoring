@@ -139,7 +139,7 @@
                 <table id="requestTable" class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>Approved By</th>
+                            <th>Recommending Approval</th>
                             <th>Requested By</th>
                             <th>Item</th>
                             <th>Quantity</th>
