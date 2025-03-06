@@ -78,7 +78,7 @@ class Dean extends Controller {
 		->join('users','request_supplies.requested_by','=','users.id')
 		->join('person','users.person_id','=','person.id')
 		->where('request_supplies.school_department_id',$user->school_department_id)
-		->where('request_supplies.user_role_id',$user->user_role_id)
+		// ->where('request_supplies.user_role_id',$user->user_role_id)
 		->whereIn('request_supplies.action_type',[2,3,4,5,6])
 		->select('request_supplies.id','person.first_name','person.last_name','person.middle_name','inventory_name.name','request_supplies.request_quantity','request_supplies.date','request_supplies.action_type')
 		->orderBy('request_supplies.updated_at','asc')
@@ -147,15 +147,26 @@ class Dean extends Controller {
 		$gen_user = Auth::user()->id;
 		
 		$user = User::find($gen_user);
-		// dd($user);
 		$get_request_supplies = RequestSupplies::join('inventory','request_supplies.inventory_id','=','inventory.id')
 		->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
 		->join('users','request_supplies.requested_by','=','users.id')
 		->join('person','users.person_id','=','person.id')
 		->where('request_supplies.school_department_id',$user->school_department_id)
-		->where('request_supplies.user_role_id',$user->user_role_id)
+		// ->where('request_supplies.user_role_id',$user->user_role_id)
 		->where('request_supplies.action_type',1)
-		->select('request_supplies.id','person.first_name','person.last_name','person.middle_name','inventory_name.name','request_supplies.request_quantity','request_supplies.date','request_supplies.action_type')
+		->selectRaw("
+			GROUP_CONCAT(request_supplies.id ORDER BY request_supplies.id ASC) as request_supplies_ids,
+			request_supplies.request_supplies_code,
+			person.first_name, 
+			person.middle_name, 
+			person.last_name, 
+			GROUP_CONCAT(DISTINCT inventory_name.name ORDER BY inventory_name.name ASC SEPARATOR ' / ') as item_names,
+			GROUP_CONCAT(request_supplies.request_quantity ORDER BY inventory_name.name ASC SEPARATOR ' / ') as request_quantities,
+			request_supplies.request_quantity,
+			request_supplies.date,
+			request_supplies.action_type
+		")
+		->groupBy('request_supplies.request_supplies_code')
 		->orderBy('request_supplies.updated_at','asc')
 		->get();
 		// dd($get_request_supplies);
@@ -198,14 +209,16 @@ class Dean extends Controller {
                 <span class="fa fa-check"></span> Approved
               </button>'
             : '<a type="button" class="btn btn-success btn-sm text-white approvedBtn" 
-                data-request_supplies_id="' . $request->id . '" 
+                data-request_supplies_id="['. $request->request_supplies_ids .']"  
                 style="margin: 4px;">
                 <span class="fa fa-check"></span> Approve
               </a>';
 			return [
-				'name' => strtoupper(trim($request->first_name . ' ' . ($request->middle ? $request->middle . ' ' : '') . $request->last_name)), 
-				'item' =>$request->name,
-				'quantity' =>$request->request_quantity,
+				'name' => '<a data-request_supplies_id="['. $request->request_supplies_ids .']"  data-request_supplies_code="'.$request->request_supplies_code.'"  title="Click to view details" 
+							style="text-decoration: underline; cursor: pointer; color: #4620b1 !important;" 
+							class="viewDetail">'.strtoupper(trim($request->first_name . ' ' . ($request->middle ? $request->middle . ' ' : '') . $request->last_name)).'</a>',
+				'item' =>$request->item_names,
+				'quantity' =>$request->request_quantities,
 				'date' => Carbon::parse($request->date)->format('F j, Y'),
 				'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
 				'action' => $approveButton,
@@ -216,6 +229,42 @@ class Dean extends Controller {
 
 
 	}
+
+	public function my_request_data_form(){
+		$request_supplies_id = \Request::get('request_supplies_id');
+		$request_supplies_code = \Request::get('request_supplies_code');
+	
+		$role = Roles::where('id', 3)
+			->select('id', 'name')
+			->first();
+	
+	
+		$finance_head = Person::where('person.id',24)->first();
+		$pc = Person::where('person.id',1)->first();
+	
+		$request_supplies = RequestSupplies::where('id', $request_supplies_id)->first();
+		$release_date = $request_supplies->release_date ? : date('Y-m-d');
+		$my_request_supplies = RequestSupplies::join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+		->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+		->where('request_supplies.request_supplies_code', $request_supplies_code)
+		->select('inventory_name.name', 'request_supplies.request_quantity', 'request_supplies.inv_unit_price', 'request_supplies.inv_unit_total_price','request_supplies.date')
+		->get();
+
+		$my_request_supplies_details = RequestSupplies::join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+		->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+		->join('school_department','request_supplies.school_department_id','=','school_department.id')
+		->join('users','request_supplies.requested_by','=','users.id')
+		->join('person','users.person_id','=','person.id')
+		->where('request_supplies.request_supplies_code', $request_supplies_code)
+		->select('inventory_name.name', 'request_supplies.request_quantity', 'request_supplies.inv_unit_price', 'request_supplies.inv_unit_total_price','request_supplies.date','school_department.name','person.last_name','person.first_name','person.middle_name','person.signature')
+		->first();
+		// dd($)
+	
+	
+		return view('dean.my_request_form',compact('role','teacher','person','inventory_list','finance_head','pc','my_request_supplies','my_request_supplies_details'));
+	}
+	
+	
 
 
 
@@ -232,23 +281,28 @@ class Dean extends Controller {
             ]);
         }
 
-        $get_request_supplies = RequestSupplies::find($request->request_supplies_id);
+        $request_supplies_ids = is_array($request->request_supplies_ids) ? 
+                                $request->request_supplies_ids : 
+                                [$request->request_supplies_ids];
 
-        if (!$get_request_supplies) {
+   
+        $updated = RequestSupplies::whereIn('id', $request_supplies_ids)
+            ->update([
+                'approved_by' => $user->id,
+                'action_type' => 2
+            ]);
+
+        if ($updated) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Request Supplies Approved successfully.'
+            ]);
+        } else {
             return response()->json([
                 'status' => 'failed',
-                'message' => 'Request Supplies not found.'
+                'message' => 'No records were updated. Please check the request IDs.'
             ]);
         }
-
-        $get_request_supplies->approved_by = $user->id;
-        $get_request_supplies->action_type = 2;
-        $get_request_supplies->save();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Request Supplies Approved successfully.'
-        ]);
 
     } catch (\Exception $e) {
         return response()->json([
@@ -259,6 +313,51 @@ class Dean extends Controller {
         ]);
     }
 }
+
+
+// public function GetApprovedAllRequest(Request $request)
+// {
+//     try {
+//         $gen_user = Auth::id();
+//         $user = User::find($gen_user);
+
+//         if (!$user) {
+//             return response()->json([
+//                 'status' => 'failed',
+//                 'message' => 'User not found.'
+//             ]);
+//         }
+
+//         $updated_requests = RequestSupplies::where('school_department_id', $user->school_department_id)
+//             ->where('user_role_id', $user->user_role_id)
+//             ->where('action_type', 1) 
+//             ->update([
+//                 'approved_by' => $user->id,
+//                 'action_type' => 2,
+//                 'updated_at' => date('Y-m-d H:i:s') 
+//             ]);
+
+//         if ($updated_requests == 0) {
+//             return response()->json([
+//                 'status' => 'failed',
+//                 'message' => 'No pending requests found to approve.'
+//             ]);
+//         }
+
+//         return response()->json([
+//             'status' => 'success',
+//             'message' => 'All pending request supplies approved successfully.'
+//         ]);
+
+//     } catch (\Exception $e) {
+//         return response()->json([
+//             'status' => 'failed',
+//             'message' => 'An error occurred while approving the requests.',
+//             'error' => $e->getMessage(),
+//             'line' => $e->getLine()
+//         ]);
+//     }
+// }
 
 public function GetApprovedAllRequest(Request $request)
 {
@@ -273,9 +372,30 @@ public function GetApprovedAllRequest(Request $request)
             ]);
         }
 
-        $updated_requests = RequestSupplies::where('school_department_id', $user->school_department_id)
-            ->where('user_role_id', $user->user_role_id)
-            ->where('action_type', 1) 
+
+        $request_supplies_ids = $request->input('request_supplies_ids', []);
+
+        if (!is_array($request_supplies_ids)) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Invalid request data.'
+            ]);
+        }
+
+
+        $flat_ids = collect($request_supplies_ids)->flatten()->unique()->map(function ($id) {
+            return intval($id); 
+        })->toArray();
+
+        if (empty($flat_ids)) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No valid request supplies IDs found.'
+            ]);
+        }
+
+      
+        $updated_requests = RequestSupplies::whereIn('id', $flat_ids)
             ->update([
                 'approved_by' => $user->id,
                 'action_type' => 2,
@@ -291,7 +411,7 @@ public function GetApprovedAllRequest(Request $request)
 
         return response()->json([
             'status' => 'success',
-            'message' => 'All pending request supplies approved successfully.'
+            'message' => 'All selected request supplies approved successfully.'
         ]);
 
     } catch (\Exception $e) {
@@ -303,6 +423,8 @@ public function GetApprovedAllRequest(Request $request)
         ]);
     }
 }
+
+
 
 
 

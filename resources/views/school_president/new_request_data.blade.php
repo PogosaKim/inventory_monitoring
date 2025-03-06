@@ -212,38 +212,213 @@ $(document).ready(function() {
       });
 
 
-      $("#approveAllBtn").on("click", function() {
+    //   $("#approveAllBtn").on("click", function() {
+    // let pendingRequests = [];
+
+    // // Get all pending requests from the table
+    //     $("#requestTable .approvedBtn").each(function() {
+    //         pendingRequests.push($(this).data("request_supplies_id"));
+    //     });
+
+    //     if (pendingRequests.length === 0) {
+    //         Swal.fire({
+    //             icon: 'info',
+    //             title: 'No Pending Requests',
+    //             text: 'There are no requests left to approve.',
+    //         });
+    //         return;
+    //     }
+
+    //     Swal.fire({
+    //         title: "Are you sure?",
+    //         text: "To approve all pending requests",
+    //         icon: "warning",
+    //         showCancelButton: true,
+    //         confirmButtonColor: "#3085d6",
+    //         cancelButtonColor: "#d33",
+    //         confirmButtonText: "Yes, approve all!"
+    //     }).then((result) => {
+    //         if (result.isConfirmed) {
+    //             $.ajax({
+    //                 url: "{{ url('president/approve_all_supplies') }}",
+    //                 type: "POST",
+    //                 data: {
+    //                     request_supplies_ids: pendingRequests, 
+    //                     _token: "{{ csrf_token() }}"
+    //                 },
+    //                 success: function(response) {
+    //                     if (response.status === 'success') {
+    //                         Swal.fire({
+    //                             icon: 'success',
+    //                             title: 'Approved!',
+    //                             text: 'All pending requests have been approved successfully!',
+    //                         }).then(() => {
+    //                             oTable.ajax.reload();
+    //                         });
+    //                     } else {
+    //                         Swal.fire({
+    //                             icon: 'error',
+    //                             title: 'Error',
+    //                             text: response.message || 'Failed to approve requests. Please try again.',
+    //                         });
+    //                     }
+    //                 },
+    //                 error: function(xhr) {
+    //                     let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+    //                     Swal.fire({
+    //                         icon: 'error',
+    //                         title: 'Error',
+    //                         text: errorMessage,
+    //                     });
+    //                     console.log(xhr.responseText);
+    //                 }
+    //             });
+
+    //         }
+    //     });
+    // });
+
+
+    //   oTable.on("click", ".approvedBtn", function() {
+    //         const request_supplies_id = $(this).data("request_supplies_id");
+
+    //         Swal.fire({
+    //             title: "Are you sure?",
+    //             text: "To Approved this request",
+    //             icon: "warning",
+    //             showCancelButton: true,
+    //             confirmButtonColor: "#3085d6",
+    //             cancelButtonColor: "#d33",
+    //             confirmButtonText: "Yes, approved it!"
+    //         }).then((result) => {
+    //             if (result.isConfirmed) {
+    //                 $.ajax({
+    //                     url: "{{ url('president/approved_supplies') }}",
+    //                     type: "POST",
+    //                     data: {
+    //                       request_supplies_id: request_supplies_id,
+    //                         _token: "{{ csrf_token() }}"
+    //                     },
+    //                     success: function(response) {
+    //                         if (response.status === 'success') {
+    //                             Swal.fire({
+    //                                 icon: 'success',
+    //                                 title: 'Approved!',
+    //                                 text: 'Request Supplies Approved successfully!',
+    //                             }).then(() => {
+    //                                 oTable.ajax.reload(); 
+    //                             });
+    //                         } else {
+    //                             Swal.fire({
+    //                                 icon: 'error',
+    //                                 title: 'Error',
+    //                                 text: response.message || 'Failed to Request Supplies. Please try again.',
+    //                             });
+    //                         }
+    //                     },
+    //                     error: function(xhr) {
+    //                         let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+    //                         Swal.fire({
+    //                             icon: 'error',
+    //                             title: 'Error',
+    //                             text: errorMessage,
+    //                         });
+    //                         console.log(xhr.responseText);
+    //                     }
+    //                 });
+    //             }
+    //         });
+    //     });
+
+    $("#approveAllBtn").on("click", function() {
     let pendingRequests = [];
 
-    // Get all pending requests from the table
-        $("#requestTable .approvedBtn").each(function() {
-            pendingRequests.push($(this).data("request_supplies_id"));
-        });
+    $("#requestTable .approvedBtn").each(function() {
+        let requestId = $(this).data("request_supplies_id");
 
-        if (pendingRequests.length === 0) {
-            Swal.fire({
-                icon: 'info',
-                title: 'No Pending Requests',
-                text: 'There are no requests left to approve.',
-            });
-            return;
+        if (requestId) {
+            if (Array.isArray(requestId)) {
+                pendingRequests = pendingRequests.concat(requestId); 
+            } else {
+                pendingRequests.push(requestId);
+            }
         }
+    });
+
+    if (pendingRequests.length === 0) {
+        Swal.fire({
+            icon: 'info',
+            title: 'No Pending Requests',
+            text: 'There are no requests left to approve.',
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "To approve all pending requests",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, approve all!"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: "{{ url('president/approve_all_supplies') }}",
+                type: "POST",
+                data: $.param({ 'request_supplies_ids': pendingRequests }) + "&_token={{ csrf_token() }}", 
+                success: function(response) {
+                    if (response.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Approved!',
+                            text: 'All pending requests have been approved successfully!',
+                        }).then(() => {
+                            oTable.ajax.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: response.message || 'Failed to approve requests. Please try again.',
+                        });
+                    }
+                },
+                error: function(xhr) {
+                    let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMessage,
+                    });
+                    console.log(xhr.responseText);
+                }
+            });
+        }
+    });
+});
+
+
+    oTable.on("click", ".approvedBtn", function() {
+        const request_supplies_ids = $(this).data("request_supplies_id"); 
+        console.log(request_supplies_ids);
 
         Swal.fire({
             title: "Are you sure?",
-            text: "To approve all pending requests",
+            text: "To approve this request",
             icon: "warning",
             showCancelButton: true,
             confirmButtonColor: "#3085d6",
             cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, approve all!"
+            confirmButtonText: "Yes, approve it!"
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
-                    url: "{{ url('president/approve_all_supplies') }}",
+                    url: "{{ url('president/approved_supplies') }}",
                     type: "POST",
                     data: {
-                        request_supplies_ids: pendingRequests, 
+                        request_supplies_ids: request_supplies_ids, 
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
@@ -251,7 +426,7 @@ $(document).ready(function() {
                             Swal.fire({
                                 icon: 'success',
                                 title: 'Approved!',
-                                text: 'All pending requests have been approved successfully!',
+                                text: 'Request Supplies Approved successfully!',
                             }).then(() => {
                                 oTable.ajax.reload();
                             });
@@ -259,7 +434,7 @@ $(document).ready(function() {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'Error',
-                                text: response.message || 'Failed to approve requests. Please try again.',
+                                text: response.message || 'Failed to approve Request Supplies. Please try again.',
                             });
                         }
                     },
@@ -273,62 +448,19 @@ $(document).ready(function() {
                         console.log(xhr.responseText);
                     }
                 });
-
             }
         });
     });
 
 
-      oTable.on("click", ".approvedBtn", function() {
-            const request_supplies_id = $(this).data("request_supplies_id");
+    oTable.on("click", ".viewDetail", function() {
+        const request_supplies_id = $(this).data("request_supplies_id");
+        const request_supplies_code = $(this).data("request_supplies_code");
+        const url = "{{ url('president/my_request_data_form') }}?request_supplies_id=" + request_supplies_id + "&request_supplies_code=" + request_supplies_code;
+        window.open(url);
+    });
 
-            Swal.fire({
-                title: "Are you sure?",
-                text: "To Approved this request",
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonColor: "#3085d6",
-                cancelButtonColor: "#d33",
-                confirmButtonText: "Yes, approved it!"
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: "{{ url('president/approved_supplies') }}",
-                        type: "POST",
-                        data: {
-                          request_supplies_id: request_supplies_id,
-                            _token: "{{ csrf_token() }}"
-                        },
-                        success: function(response) {
-                            if (response.status === 'success') {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'Approved!',
-                                    text: 'Request Supplies Approved successfully!',
-                                }).then(() => {
-                                    oTable.ajax.reload(); 
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error',
-                                    text: response.message || 'Failed to Request Supplies. Please try again.',
-                                });
-                            }
-                        },
-                        error: function(xhr) {
-                            let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: errorMessage,
-                            });
-                            console.log(xhr.responseText);
-                        }
-                    });
-                }
-            });
-        });
+
 
 
 

@@ -15,7 +15,7 @@
     <meta name="DC.title" content="Laravel 5 Starter Site">
     <meta name="DC.subject" content="">
     <meta name="DC.creator" content="">
-
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     @yield('styles')

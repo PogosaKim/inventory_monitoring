@@ -119,6 +119,7 @@ Route::post('dean/create_request','Dean@Createrequest');
 Route::get('dean/track_request','Dean@GetTrackingRequest');
 Route::get('dean/dean/check_status','Dean@CheckedStatusRequest');
 Route::get('dean/dean/check_status_request','Dean@CheckedStatusRequestData');
+Route::get('dean/my_request_data_form','Dean@my_request_data_form');
 
 
 
@@ -131,6 +132,7 @@ Route::get('president/new_get_request','SchoolPresident@GetNewRequest');
 Route::post('president/approve_all_supplies','SchoolPresident@GetApprovedAllRequest');
 Route::post('president/approved_supplies','SchoolPresident@GetApprovedRequest');
 Route::get('school_president/president/check_status_request','SchoolPresident@CheckedStatusRequestData');
+Route::get('president/my_request_data_form','SchoolPresident@my_request_data_form');
 
 
 // Finance 

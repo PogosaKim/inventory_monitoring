@@ -136,7 +136,7 @@
             <div class="card-body">
               <div class="row flex-between-center">
                 <div class="col-md">
-                  <h5 class="mb-2 mb-md-0">Welcome Back Dean!</h5>
+                  <h5 class="mb-2 mb-md-0">Welcome Dean!</h5>
                 </div>
               </div>
             </div>

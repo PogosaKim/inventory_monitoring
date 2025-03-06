@@ -49,7 +49,7 @@ class Teacher extends Controller {
             GROUP_CONCAT(FORMAT(request_supplies.inv_unit_total_price, 2) ORDER BY inventory_name.name ASC SEPARATOR ' / ') as inv_unit_total_prices,
             request_supplies.date
         ")
-        ->groupBy('request_supplies.request_supplies_code', 'request_supplies.date')
+        ->groupBy('request_supplies.request_supplies_code')
         ->orderBy('request_supplies.updated_at', 'asc')
         ->get();
 	// dd($get_request_supplies);
