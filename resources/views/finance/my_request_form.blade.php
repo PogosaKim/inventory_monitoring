@@ -59,7 +59,7 @@
 			<ul class="navbar-nav navbar-nav-icons ms-auto flex-row align-items-center">
 				<li class="nav-item">
                     @if (Auth::check())
-                        <p class="dropdown-item">Hi President, {{ Auth::user()->name }}</p>
+                        <p class="dropdown-item">Hi Finance, {{ Auth::user()->name }}</p>
                     @endif
 					<div class="theme-control-toggle fa-icon-wait px-2"><input
 							class="form-check-input ms-0 theme-control-toggle-input" id="themeControlToggle"
@@ -241,15 +241,18 @@
                   </div>
                 
                 
-                    <div class="col-md-2 text-center">
-                        <p>Approved By:</p>
-                        
-                        <img src="{{ asset('path/to/signature.png') }}" alt="Signature" 
-                             style="width: 50%; height: auto; margin-bottom: 10px; display: none;"> 
-                        
-                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
-              
-                    </div>
+                  <div class="col-md-2 text-center">
+                    <p>Approved By:</p>
+                    
+                    @if (!empty($my_request_supplies_details->approved_by_finance_signature))
+                        <img src="{{ asset($my_request_supplies_details->approved_by_finance_signature) }}" alt="HR Signature" 
+                             style="width: 100%; height: auto; margin-bottom: 10px;">
+                    @else
+                        <p>No signature available</p>
+                    @endif
+                    <b>{{ $my_request_supplies_details->approved_by_finance_last_name }}, {{ $my_request_supplies_details->approved_by_finance_first_name }} {{ $my_request_supplies_details->approved_by_finance_middle_name }}</b>
+                    <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                </div>
                 
               
                     <div class="col-md-2 text-center">

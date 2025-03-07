@@ -173,7 +173,7 @@
             
                 <div class="d-flex justify-content-start mb-3">
                     <div style="flex-basis: 48%;">From (DEPT.): 
-                        <input type="text" class="form-control" value="{{ $my_request_supplies_details->name }}" readonly>
+                        <input type="text" class="form-control" value="{{ $my_request_supplies_details->department_name }}" readonly>
                     </div>
                                        
                 </div>

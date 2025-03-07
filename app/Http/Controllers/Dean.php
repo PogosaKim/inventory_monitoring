@@ -256,7 +256,7 @@ class Dean extends Controller {
 		->join('users','request_supplies.requested_by','=','users.id')
 		->join('person','users.person_id','=','person.id')
 		->where('request_supplies.request_supplies_code', $request_supplies_code)
-		->select('inventory_name.name', 'request_supplies.request_quantity', 'request_supplies.inv_unit_price', 'request_supplies.inv_unit_total_price','request_supplies.date','school_department.name','person.last_name','person.first_name','person.middle_name','person.signature')
+		->select('inventory_name.name', 'request_supplies.request_quantity', 'request_supplies.inv_unit_price', 'request_supplies.inv_unit_total_price','request_supplies.date','school_department.name as department_name','person.last_name','person.first_name','person.middle_name','person.signature')
 		->first();
 		// dd($)
 	
