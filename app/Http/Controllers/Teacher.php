@@ -140,50 +140,55 @@ public function my_request_data_form(){
 		return view('teacher.request',compact('role','teacher','person','inventory_list','finance_head','pc'));
 	}
 
-	public function Createrequest()
-	{
-		$user_role_id = \Request::get('user_role_id');
-		$date = \Request::get('date');
-		$school_department_id = \Request::get('school_department_id');
-		$inventory_ids = \Request::get('inventory_id');
-		$request_quantities = \Request::get('request_quantity');
-		$inv_unit_price = \Request::get('inv_unit_price');
-		$inv_unit_total_price = \Request::get('inv_unit_total_price');
-		$request_supplies_code = Str::random(5);
-		
-		try {
-			foreach ($inventory_ids as $index => $inventoryId) {
-				RequestSupplies::create([
-					'inventory_id' => $inventoryId,
-					'requested_by' => Auth::user()->id,
-					'user_role_id' => $user_role_id,
-					'school_department_id' => $school_department_id,
-					'date' => $date,
-					'request_quantity' => $request_quantities[$index],
-					'action_type' => 1 ,
-					'inv_unit_price' => $inv_unit_price,
-					'inv_unit_total_price' => $inv_unit_total_price,
-					'request_supplies_code' => $request_supplies_code
-				]);
-			}
+public function Createrequest()
+{
+    $user_role_id = \Request::get('user_role_id');
+    $date = \Request::get('date');
+    $school_department_id = \Request::get('school_department_id');
+    $inventory_ids = \Request::get('inventory_id');
+    $request_quantities = \Request::get('request_quantity');
+	$inv_unit_prices = \Request::get('inv_unit_price');
+	$inv_unit_total_prices = \Request::get('inv_unit_total_price');
 
-			\DB::commit();
+	
+    $request_supplies_code = Str::random(5);
 
-			return response()->json([
-				'success' => true,
-				'message' => 'Request submitted successfully!',
-			]);
+    try {
+        \DB::beginTransaction();
 
-		} catch (\Exception $e) {
-			\DB::rollBack();
+        foreach ($inventory_ids as $index => $inventoryId) {
+            RequestSupplies::create([
+                'inventory_id' => $inventoryId,
+                'requested_by' => Auth::user()->id,
+                'user_role_id' => $user_role_id,
+                'school_department_id' => $school_department_id,
+                'date' => $date,
+                'request_quantity' => $request_quantities[$index],
+                'action_type' => 1,
+                'inv_unit_price' => $inv_unit_prices[$index],  // Fix here
+        		'inv_unit_total_price' => $inv_unit_total_prices[$index], // Fix here
+                'request_supplies_code' => $request_supplies_code
+            ]);
+        }
 
-			return response()->json([
-				'success' => false,
-				'message' => 'Failed to submit the request. Please try again.',
-				'error' => $e->getMessage(),
-			]);
-		}
-	}
+        \DB::commit();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Request submitted successfully!',
+        ]);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to submit the request. Please try again.',
+            'error' => $e->getMessage(),
+        ]);
+    }
+}
+
 
 	public function GetTrackingRequest()
 	{

@@ -43,7 +43,7 @@
 			</a>
 		</div>
 
-		@include('teacher_sidebar');
+		@include('finance_sidebar');
 
 	</nav>
 

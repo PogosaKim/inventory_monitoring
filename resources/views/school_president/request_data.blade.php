@@ -139,7 +139,6 @@
                 <table id="requestTable" class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>Recommending Approval</th>
                             <th>Requested By</th>
                             <th>Item</th>
                             <th>Quantity</th>
@@ -181,9 +180,6 @@ $(document).ready(function() {
           dataSrc: "",
       },
       columns: [
-          {
-              data: 'approved_by'
-          },
           {
               data: 'requested_by'
           },
@@ -259,6 +255,14 @@ $(document).ready(function() {
                 }
             });
         });
+
+        oTable.on("click", ".viewDetail", function() {
+        const request_supplies_id = $(this).data("request_supplies_id");
+        const request_supplies_code = $(this).data("request_supplies_code");
+        const url = "{{ url('president/my_request_data_form') }}?request_supplies_id=" + request_supplies_id + "&request_supplies_code=" + request_supplies_code;
+        window.open(url);
+    });
+
 
 
 

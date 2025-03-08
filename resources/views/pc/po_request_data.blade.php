@@ -140,11 +140,8 @@
                     <thead>
                         <tr>
                             <th>Requested By</th>
-                            <th>Signature</th>
                             <th>Item</th>
                             <th>Quantity</th>
-                            <th>Release</th>
-                            <th>Needed</th>
                             <th>Date</th>
                             <th>Status</th>
                             <th>Action</th>
@@ -187,19 +184,10 @@ $(document).ready(function() {
               data: 'requested_by'
           },
           {
-              data: 'signature'
-          },
-          {
               data: 'item'
           },
           {
               data: 'quantity'
-          },
-          {
-              data: 'release'
-          },
-          {
-              data: 'needed'
           },
           {
               data: 'date'
@@ -319,7 +307,7 @@ $(document).ready(function() {
 
 
     oTable.on("click", ".forReleaseBtn", function() {
-        const request_supplies_id = $(this).data("request_supplies_id");
+        const request_supplies_ids = $(this).data("request_supplies_id"); 
 
         Swal.fire({
             title: "Are you sure?",
@@ -335,7 +323,7 @@ $(document).ready(function() {
                     url: "{{ url('pc/for_release_supplies') }}",
                     type: "POST",
                     data: {
-                        request_supplies_id: request_supplies_id,
+                        request_supplies_ids: request_supplies_ids,
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
@@ -371,7 +359,7 @@ $(document).ready(function() {
 
 
     oTable.on("click", ".approvedPoBtn", function() {
-        const request_supplies_id = $(this).data("request_supplies_id");
+        const request_supplies_ids = $(this).data("request_supplies_id"); 
 
         Swal.fire({
             title: "Are you sure?",
@@ -387,7 +375,7 @@ $(document).ready(function() {
                     url: "{{ url('pc/for_approved_po_supplies') }}",
                     type: "POST",
                     data: {
-                        request_supplies_id: request_supplies_id,
+                        request_supplies_ids: request_supplies_ids,
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
@@ -424,7 +412,7 @@ $(document).ready(function() {
 
     
     oTable.on("click", ".processPoBtn", function() {
-        const request_supplies_id = $(this).data("request_supplies_id");
+        const request_supplies_ids = $(this).data("request_supplies_id"); 
 
         Swal.fire({
             title: "Are you sure?",
@@ -440,7 +428,7 @@ $(document).ready(function() {
                     url: "{{ url('pc/for_process_po') }}",
                     type: "POST",
                     data: {
-                        request_supplies_id: request_supplies_id,
+                        request_supplies_ids: request_supplies_ids,
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
@@ -472,6 +460,13 @@ $(document).ready(function() {
                 });
             }
         });
+    });
+
+    oTable.on("click", ".viewDetail", function() {
+        const request_supplies_id = $(this).data("request_supplies_id");
+        const request_supplies_code = $(this).data("request_supplies_code");
+        const url = "{{ url('pc/my_request_data_form') }}?request_supplies_id=" + request_supplies_id + "&request_supplies_code=" + request_supplies_code;
+        window.open(url);
     });
 
 

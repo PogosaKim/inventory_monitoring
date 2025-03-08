@@ -182,39 +182,135 @@
                         <button type="button" id="add-row" class="btn btn-primary" style="margin-bottom:10px; margin-left:90%;">Add</button>
                         <thead>
                             <tr>
-                                <th>ITEM</th>
+                                <th>ITEMS / DESCRIPTION</th>
                                 <th>QUANTITY</th>
+                                <th>UNIT PRICE</th>
+                                <th>TOTAL AMOUNT</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>
-                                    <select name="inventory_id[]" id="inventory_id" class="form-control">
-                                        <option value="0">--Select--</option>
+                                    <select name="inventory_id[]" class="form-control inventory_id">
+                                        <option value="0" data-price="0">--Select--</option>
                                         @foreach ($inventory_list as $inventory)
-                                            <option value="{{ $inventory->inventory_id }}"> {{ $inventory->name }}</option>
+                                            <option value="{{ $inventory->inventory_id }}" data-price="{{ $inventory->inv_amount }}">
+                                                {{ $inventory->name }}
+                                            </option>
                                         @endforeach
                                     </select>
                                 </td>
-                                <td><input type="number" name="request_quantity[]" id="request_quantity" class="form-control"  min="1" /></td>
-                                <td><button type="button" class="btn btn-danger remove-row">Remove</button></td> 
+                                <td><input type="number" name="request_quantity[]" class="form-control request_quantity" min="1" value="1"/></td>
+                                <td><input type="text" name="inv_unit_price[]" class="form-control inv_unit_price" readonly/></td>
+                                <td><input type="text" name="inv_unit_total_price[]" class="form-control inv_unit_total_price" readonly/></td>
+                                <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
                             </tr>
                         </tbody>
                     </table>
                 
                 </div>
         
-                <div class="mb-4 text-center">
-                    <p>Requested by: <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b></p>
-                    @if (!empty($person->signature))
-                        <img src="{{ asset($person->signature) }}" alt="HR Signature" style="width: 50%; height: auto; margin-top: 10px;">
-                    @else
-                        <p>No signature available</p>
-                    @endif
-                    <hr style="width: 15%; border-color: #333; margin: 10px auto;">
+                <div class="row justify-content-center">
+                  
+                    <div class="col-md-2 text-center">
+                        <p>Requested by:</p>
+                        
+                        @if (!empty($person->signature))
+                            <img src="{{ asset($person->signature) }}" alt="HR Signature" 
+                                 style="width: 100%; height: auto; margin-bottom: 10px;">
+                        @else
+                            <p>No signature available</p>
+                        @endif
+                        <b>{{ $person->last_name }}, {{ $person->first_name }} {{ $person->middle_name }}</b>
+                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                    </div>
+                
+               
+                    <div class="col-md-2 text-center">
+                        <p>Recommending Approval:</p>
+                        
+                        <img src="{{ asset('path/to/signature.png') }}" alt="Signature" 
+                             style="width: 50%; height: auto; margin-bottom: 10px; display: none;"> 
+                        
+                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                     
+                    </div>
+                
+                
+                    <div class="col-md-2 text-center">
+                        <p>Approved By:</p>
+                        
+                        <img src="{{ asset('path/to/signature.png') }}" alt="Signature" 
+                             style="width: 50%; height: auto; margin-bottom: 10px; display: none;"> 
+                        
+                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+              
+                    </div>
+                
+              
+                    <div class="col-md-2 text-center">
+                        <p>Received By:</p>
+                        
+                        <img src="{{ asset('path/to/signature.png') }}" alt="Signature" 
+                             style="width: 50%; height: auto; margin-bottom: 10px; display: none;"> 
+                        
+                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                        
+                    </div>
                 </div>
                 
+
+                <div class="row justify-content-between">
+                    <div class="col-md-2 text-center">
+                        <p>Confirmed as to Budget:</p>
+                    
+                        {{-- @if (!empty($finance_head->signature))
+                            <div style="display: flex; justify-content: center; margin-top: 10px;">
+                                <img src="{{ asset($person->signature) }}" alt="HR Signature" 
+                                     style="width: 100%; height: auto;">
+                            </div>
+                        @else
+                            <p></p>
+                        @endif --}}
+                    
+                        <b style="display: block; margin-top: 5px;">
+                            @if(isset($finance_head) && $finance_head)
+                            {{ $finance_head->last_name }}, {{ $finance_head->first_name }} {{ $finance_head->middle_name }}
+                        @else
+                            
+                        @endif
+                        </b>
+                    
+                        <hr style="width: 60%; border: 1px solid #333; margin: 5px auto;">
+                    
+                        <p style="margin-top: -5px;">Finance Head</p>
+                    </div>
+                    
+                    <div class="col-md-2 text-center">
+                        <p>Received for P.O:</p>
+                        {{-- @if (!empty($pc->signature))
+                            <div style="display: flex; justify-content: center; margin-top: 10px;">
+                                <img src="{{ asset($person->signature) }}" alt="HR Signature" 
+                                     style="width: 100%; height: auto;">
+                            </div>
+                        @else
+                            <p></p>
+                        @endif --}}
+                    
+                        <b style="display: block; margin-top: 5px;">
+                            {{ $pc->last_name }}, {{ $pc->first_name }} {{ $pc->middle_name }}
+                        </b>
+                    
+                        <hr style="width: 60%; border: 1px solid #333; margin: 5px auto;">
+                    
+                        <p style="margin-top: -5px;">Properly Custodian</p>
+                    </div>
+                </div>
+
+                
+                
+
                 
              
                 <div class="text-center">
@@ -246,24 +342,49 @@ document.getElementById('date-input').value = new Date().toISOString().split('T'
  var oTable;
 $(document).ready(function() {
   
+    
+
+    $(document).on('change', '.inventory_id', function() {
+        let selectedOption = $(this).find(':selected');
+        let unitPrice = selectedOption.data('price'); // Get price from data attribute
+        let row = $(this).closest('tr');
+
+        row.find('.inv_unit_price').val(unitPrice); // Set unit price
+        row.find('.request_quantity').trigger('input'); // Trigger recalculation
+    });
+
+    // When quantity is changed, update total price
+    $(document).on('input', '.request_quantity', function() {
+        let row = $(this).closest('tr');
+        let quantity = parseFloat($(this).val()) || 0;
+        let unitPrice = parseFloat(row.find('.inv_unit_price').val()) || 0;
+        let totalPrice = quantity * unitPrice;
+
+        row.find('.inv_unit_total_price').val(totalPrice.toFixed(2)); // Set total price
+    });
     $('#inventory_id').select2({
             placeholder: "--Select--",
             allowClear: true
         });
+
         
    $('#add-row').on('click', function() {
     var newRow = `<tr>
-                    <td>
-                        <select name="inventory_id[]" class="form-control">
-                            <option value="0">--Select--</option>
-                            @foreach ($inventory_list as $inventory)
-                                <option value="{{ $inventory->inventory_id }}">{{ $inventory->name }}</option>
-                            @endforeach
-                        </select>
-                    </td>
-                    <td><input type="number" name="request_quantity[]" class="form-control" min="1" /></td>
-                    <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
-                </tr>`;
+                        <td>
+                            <select name="inventory_id[]" class="form-control inventory_id">
+                                <option value="0" data-price="0">--Select--</option>
+                                @foreach ($inventory_list as $inventory)
+                                    <option value="{{ $inventory->inventory_id }}" data-price="{{ $inventory->inv_amount }}">
+                                        {{ $inventory->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </td>
+                        <td><input type="number" name="request_quantity[]" class="form-control request_quantity" min="1" value="1"/></td>
+                       <td><input type="text" name="inv_unit_price[]" class="form-control inv_unit_price" readonly/></td>
+                        <td><input type="text" name="inv_unit_total_price[]" class="form-control inv_unit_total_price" readonly/></td>
+                        <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
+                    </tr>`;
             $('table tbody').append(newRow);
             toggleRemoveButtonState();
         });

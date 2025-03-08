@@ -11,6 +11,8 @@ use App\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 class Dean extends Controller {
 
 	/**
@@ -52,18 +54,18 @@ class Dean extends Controller {
              ->first();
 		}
 		// dd($role);
-
-
+		$finance_head = Person::where('person.id',24)->first();
+		$pc = Person::where('person.id',1)->first();
 
 		$inventory_list = Inventory::join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
-		->select('inventory.id as inventory_id', 'inventory_name.name', 'inventory_name.description', 'inventory.inv_unit', 'inventory.inv_quantity')
+		->select('inventory.id as inventory_id', 'inventory_name.name', 'inventory_name.description', 'inventory.inv_unit', 'inventory.inv_quantity','inv_amount')
 		->where('inventory.inv_quantity', '!=', 0)
 		->get();
 		// dd($inventory_list);
 	
 	
 	
-		return view('dean.request',compact('role','dean','person','inventory_list'));
+		return view('dean.request',compact('role','dean','person','inventory_list','finance_head','pc'));
 	}
 	
 
@@ -80,7 +82,10 @@ class Dean extends Controller {
 		->where('request_supplies.school_department_id',$user->school_department_id)
 		// ->where('request_supplies.user_role_id',$user->user_role_id)
 		->whereIn('request_supplies.action_type',[2,3,4,5,6])
-		->select('request_supplies.id','person.first_name','person.last_name','person.middle_name','inventory_name.name','request_supplies.request_quantity','request_supplies.date','request_supplies.action_type')
+		->select('request_supplies.request_supplies_code','person.first_name','person.last_name','person.middle_name','inventory_name.name','request_supplies.request_quantity','request_supplies.date','request_supplies.action_type',DB::raw("GROUP_CONCAT(DISTINCT inventory_name.name ORDER BY inventory_name.name ASC SEPARATOR ' / ') as item_names"),
+		DB::raw("GROUP_CONCAT(request_supplies.request_quantity ORDER BY inventory_name.name ASC SEPARATOR ' / ') as request_quantities"),
+		DB::raw("GROUP_CONCAT(request_supplies.id ORDER BY request_supplies.id ASC) as request_supplies_ids"))
+		->groupBy('request_supplies.request_supplies_code')
 		->orderBy('request_supplies.updated_at','asc')
 		->get();
 		// dd($get_request_supplies);
@@ -128,9 +133,11 @@ class Dean extends Controller {
                 <span class="fa fa-check"></span> Approve
               </a>';
 			return [
-				'name' => strtoupper(trim($request->first_name . ' ' . ($request->middle ? $request->middle . ' ' : '') . $request->last_name)), 
-				'item' =>$request->name,
-				'quantity' =>$request->request_quantity,
+				'name' => '<a data-request_supplies_id="['. $request->request_supplies_ids .']"  data-request_supplies_code="'.$request->request_supplies_code.'"  title="Click to view details" 
+					style="text-decoration: underline; cursor: pointer; color: #4620b1 !important;" 
+					class="viewDetail">'.strtoupper(trim($request->first_name . ' ' . ($request->middle_name ? $request->middle_name . ' ' : '') . $request->last_name)).'</a>',
+				'item' =>$request->item_names,
+				'quantity' =>$request->request_quantities,
 				'date' => Carbon::parse($request->date)->format('F j, Y'),
 				'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
 				'action' => $approveButton,
@@ -431,23 +438,40 @@ public function GetApprovedAllRequest(Request $request)
 public function Createrequest()
 {
 	$user_role_id = \Request::get('user_role_id');
-	$date = \Request::get('date');
-	$school_department_id = \Request::get('school_department_id');
-	$inventory_ids = \Request::get('inventory_id');
-	$request_quantities = \Request::get('request_quantity');
-	
+    $date = \Request::get('date');
+    $school_department_id = \Request::get('school_department_id');
+    $inventory_ids = \Request::get('inventory_id');
+    $request_quantities = \Request::get('request_quantity');
+	$inv_unit_prices = \Request::get('inv_unit_price');
+	$inv_unit_total_prices = \Request::get('inv_unit_total_price');
+    $request_supplies_code = Str::random(5);
 	try {
+		// foreach ($inventory_ids as $index => $inventoryId) {
+		// 	RequestSupplies::create([
+		// 		'inventory_id' => $inventoryId,  
+		// 		'requested_by' => Auth::user()->id,
+		// 		'user_role_id' => $user_role_id,
+		// 		'school_department_id' => $school_department_id,
+		// 		'date' => $date,
+		// 		'request_quantity' => $request_quantities[$index],
+		// 		'action_type' => 2
+		// 	]);
+		// }
+
 		foreach ($inventory_ids as $index => $inventoryId) {
-			RequestSupplies::create([
-				'inventory_id' => $inventoryId,  
-				'requested_by' => Auth::user()->id,
-				'user_role_id' => $user_role_id,
-				'school_department_id' => $school_department_id,
-				'date' => $date,
-				'request_quantity' => $request_quantities[$index],
-				'action_type' => 2
-			]);
-		}
+            RequestSupplies::create([
+                'inventory_id' => $inventoryId,
+                'requested_by' => Auth::user()->id,
+                'user_role_id' => $user_role_id,
+                'school_department_id' => $school_department_id,
+                'date' => $date,
+                'request_quantity' => $request_quantities[$index],
+                'action_type' => 2,
+                'inv_unit_price' => $inv_unit_prices[$index],  // Fix here
+        		'inv_unit_total_price' => $inv_unit_total_prices[$index], // Fix here
+                'request_supplies_code' => $request_supplies_code
+            ]);
+        }
 
 		\DB::commit();
 

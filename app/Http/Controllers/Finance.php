@@ -63,8 +63,13 @@ class Finance extends Controller {
 				'inventory_name.name',
 				'request_supplies.request_quantity',
 				'request_supplies.date',
-				'request_supplies.action_type'
+				'request_supplies.action_type',
+				'request_supplies.request_supplies_code',
+				DB::raw("GROUP_CONCAT(DISTINCT inventory_name.name ORDER BY inventory_name.name ASC SEPARATOR ' / ') as item_names"),
+				DB::raw("GROUP_CONCAT(request_supplies.request_quantity ORDER BY inventory_name.name ASC SEPARATOR ' / ') as request_quantities"),
+				DB::raw("GROUP_CONCAT(request_supplies.id ORDER BY request_supplies.id ASC) as request_supplies_ids")
 			)
+			->groupBy('request_supplies.request_supplies_code')
 			->orderBy('request_supplies.updated_at','desc')
 			->get();
 
@@ -119,9 +124,11 @@ class Finance extends Controller {
 			));
 
 			return [
-				'requested_by' => $requestedBy,
-				'item' => $request->name,
-				'quantity' => $request->request_quantity,
+				'requested_by' => '<a data-request_supplies_id="['. $request->request_supplies_ids .']"  data-request_supplies_code="'.$request->request_supplies_code.'"  title="Click to view details" 
+				style="text-decoration: underline; cursor: pointer; color: #4620b1 !important;" 
+				class="viewDetail">'.strtoupper(trim($request->requested_first_name . ' ' . ($request->requested_middle_name ? $request->requested_middle_name . ' ' : '') . $request->requested_last_name)).'</a>',
+				'item' => $request->item_names,
+				'quantity' => $request->request_quantities,
 				'date' => Carbon::parse($request->date)->format('F j, Y'),
 				'status' => '<small class="badge fw-semi-bold rounded-pill status ' . $statusBadgeClass . '">' . $statusText . '</small>',
 				'action' => $approveButton,
@@ -221,7 +228,7 @@ class Finance extends Controller {
 			return [
 				'requested_by' => '<a data-request_supplies_id="['. $request->request_supplies_ids .']"  data-request_supplies_code="'.$request->request_supplies_code.'"  title="Click to view details" 
 				style="text-decoration: underline; cursor: pointer; color: #4620b1 !important;" 
-				class="viewDetail">'.strtoupper(trim($request->requested_first_name . ' ' . ($request->requested_middle_name ? $request->middle . ' ' : '') . $request->requested_last_name)).'</a>',
+				class="viewDetail">'.strtoupper(trim($request->requested_first_name . ' ' . ($request->requested_middle_name ? $request->requested_middle_name . ' ' : '') . $request->requested_last_name)).'</a>',
 				'item' => $request->item_names,
 				'quantity' => $request->request_quantities,
 				'date' => Carbon::parse($request->date)->format('F j, Y'),

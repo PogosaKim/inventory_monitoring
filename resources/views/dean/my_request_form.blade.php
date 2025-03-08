@@ -43,7 +43,7 @@
 			</a>
 		</div>
 
-		@include('teacher_sidebar');
+		@include('dean_sidebar');
 
 	</nav>
 
@@ -265,14 +265,14 @@
                     <div class="col-md-2 text-center">
                         <p>Confirmed as to Budget:</p>
                     
-                        @if (!empty($finance_head->signature))
+                        {{-- @if (!empty($finance_head->signature))
                             <div style="display: flex; justify-content: center; margin-top: 10px;">
                                 <img src="{{ asset($my_request_supplies_details->signature) }}" alt="HR Signature" 
                                      style="width: 100%; height: auto;">
                             </div>
                         @else
                             <p></p>
-                        @endif
+                        @endif --}}
                     
                         <b style="display: block; margin-top: 5px;">
                             @if(isset($finance_head) && $finance_head)
@@ -289,14 +289,14 @@
                     
                     <div class="col-md-2 text-center">
                         <p>Received for P.O:</p>
-                        @if (!empty($pc->signature))
+                        {{-- @if (!empty($pc->signature))
                             <div style="display: flex; justify-content: center; margin-top: 10px;">
                                 <img src="{{ asset($my_request_supplies_details->signature) }}" alt="HR Signature" 
                                      style="width: 100%; height: auto;">
                             </div>
                         @else
                             <p></p>
-                        @endif
+                        @endif --}}
                     
                         <b style="display: block; margin-top: 5px;">
                             {{ $pc->last_name }}, {{ $pc->first_name }} {{ $pc->middle_name }}
