@@ -140,7 +140,6 @@
                     <thead>
                         <tr>
                             <th>Requested By</th>
-                            <th>Signature</th>
                             <th>Item</th>
                             <th>Quantity</th>
                             <th>Release</th>
@@ -187,9 +186,6 @@ $(document).ready(function() {
               data: 'requested_by'
           },
           {
-              data: 'signature'
-          },
-          {
               data: 'item'
           },
           {
@@ -217,14 +213,14 @@ $(document).ready(function() {
       });
 
       oTable.on("click", ".approvedBtn", function() {
-        const request_supplies_id = $(this).data("request_supplies_id");
-
+        const request_supplies_ids = $(this).data("request_supplies_id"); 
+        console.log(request_supplies_ids);
         // Fetch inventory details first
         $.ajax({
             url: "{{ url('pc/check_inventory') }}", 
             type: "POST",
             data: {
-                request_supplies_id: request_supplies_id,
+                request_supplies_ids: request_supplies_ids,
                 _token: "{{ csrf_token() }}"
             },
             success: function(response) {
@@ -243,7 +239,7 @@ $(document).ready(function() {
                             confirmButtonText: "Yes, approve anyway"
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                approveRequest(request_supplies_id, true);
+                                approveRequest(request_supplies_ids, true);
                             }
                         });
                     } else {
@@ -257,7 +253,7 @@ $(document).ready(function() {
                             confirmButtonText: "Yes, approve it!"
                         }).then((result) => {
                             if (result.isConfirmed) {
-                                approveRequest(request_supplies_id, false);
+                                approveRequest(request_supplies_ids, false);
                             }
                         });
                     }
@@ -280,12 +276,12 @@ $(document).ready(function() {
         });
     });
 
-    function approveRequest(request_supplies_id, forceApprove) {
+    function approveRequest(request_supplies_ids, forceApprove) {
         $.ajax({
             url: "{{ url('pc/approved_supplies') }}",
             type: "POST",
             data: {
-                request_supplies_id: request_supplies_id,
+                request_supplies_ids: request_supplies_ids,
                 force_approve: forceApprove ? 1 : 0,
                 _token: "{{ csrf_token() }}"
             },
@@ -319,7 +315,7 @@ $(document).ready(function() {
 
 
     oTable.on("click", ".forReleaseBtn", function() {
-        const request_supplies_id = $(this).data("request_supplies_id");
+        const request_supplies_ids = $(this).data("request_supplies_id"); 
 
         Swal.fire({
             title: "Are you sure?",
@@ -335,7 +331,7 @@ $(document).ready(function() {
                     url: "{{ url('pc/for_release_supplies') }}",
                     type: "POST",
                     data: {
-                        request_supplies_id: request_supplies_id,
+                        request_supplies_ids: request_supplies_ids,
                         _token: "{{ csrf_token() }}"
                     },
                     success: function(response) {
