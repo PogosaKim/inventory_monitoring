@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\File;
 use Picqer\Barcode\BarcodeGenerator; 
 use Zxing\QrReader;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class PropertyCustodian extends Controller {
 
@@ -72,12 +73,17 @@ class PropertyCustodian extends Controller {
 
 	public function Createrequest()
 	{
+
+		// dd(\Request::all());
+
 		$user_role_id = \Request::get('user_role_id');
 		$date = \Request::get('date');
 		$school_department_id = \Request::get('school_department_id');
 		$inventory_ids = \Request::get('inventory_id');
 		$request_quantities = \Request::get('request_quantity');
-		
+		$inv_unit_prices = \Request::get('inv_unit_price');
+		$inv_unit_total_prices = \Request::get('inv_unit_total_price');
+		$request_supplies_code = Str::random(5);
 		try {
 			foreach ($inventory_ids as $index => $inventoryId) {
 				RequestSupplies::create([
@@ -87,9 +93,12 @@ class PropertyCustodian extends Controller {
 					'school_department_id' => $school_department_id,
 					'date' => $date,
 					'request_quantity' => $request_quantities[$index],
+					'inv_unit_price' => $inv_unit_prices[$index],  
+					'inv_unit_total_price' => $inv_unit_total_prices[$index],
 					'action_type' => 3 ,
 					'is_purchase_order' => 1,
-					'is_request_purchase_order' => 1
+					'is_request_purchase_order' => 1,
+					'request_supplies_code' => $request_supplies_code
 				]);
 			}
 
@@ -599,6 +608,71 @@ class PropertyCustodian extends Controller {
 	
 	
 		return view('pc.my_request_accept_data_form',compact('role','teacher','person','inventory_list','finance_head','pc','my_request_supplies','my_request_supplies_details','pc_details'));
+	}
+
+	public function my_request_po_data_form(){
+		$request_supplies_id = \Request::get('request_supplies_id');
+		$request_supplies_code = \Request::get('request_supplies_code');
+	
+		$role = Roles::where('id', 3)
+			->select('id', 'name')
+			->first();
+	
+	
+		$finance_head = Person::where('person.id',24)->first();
+		$pc = Person::where('person.id',1)->first();
+	
+		$request_supplies = RequestSupplies::where('id', $request_supplies_id)->first();
+		$release_date = $request_supplies->release_date ? : date('Y-m-d');
+
+		$my_request_supplies = PurchaseOrder::join('request_supplies','purchase_order.request_supplies_id','=','request_supplies.id')
+		->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+		->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+		->where('purchase_order.request_supplies_id', $request_supplies_id)
+		->select('inventory_name.name', 'inventory.inv_amount','inventory.id as inventory_id','request_supplies.request_quantity', 'request_supplies.inv_unit_price', 'request_supplies.inv_unit_total_price','request_supplies.date')
+		->get();
+		// dd($my_request_supplies
+
+		$gen_user = Auth::user()->person_id;
+		$pc_details = Person::find($gen_user);
+
+	$my_request_supplies_details = PurchaseOrder::join('request_supplies','purchase_order.request_supplies_id','=','request_supplies.id')
+	->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+    ->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+    ->join('school_department', 'request_supplies.school_department_id', '=', 'school_department.id')
+    ->join('users as requested_user', 'request_supplies.requested_by', '=', 'requested_user.id')
+    ->join('users as approved_user', 'request_supplies.approved_by', '=', 'approved_user.id')
+	->join('users as approved_by_finance_user', 'request_supplies.approved_by_finance', '=', 'approved_by_finance_user.id') 
+    ->join('person as requested_person', 'requested_user.person_id', '=', 'requested_person.id')
+    ->join('person as approved_person', 'approved_user.person_id', '=', 'approved_person.id')
+	->join('person as approved_by_finance_person', 'approved_by_finance_user.person_id', '=', 'approved_by_finance_person.id')
+	->where('purchase_order.request_supplies_id', $request_supplies_id)
+    ->select(
+        'inventory_name.name',
+        'request_supplies.request_quantity',
+        'request_supplies.inv_unit_price',
+        'request_supplies.inv_unit_total_price',
+        'request_supplies.date',
+        'school_department.name as department_name',
+        'requested_person.last_name as requested_last_name',
+        'requested_person.first_name as requested_first_name',
+        'requested_person.middle_name as requested_middle_name',
+        'requested_person.signature as requested_signature',
+        'approved_person.last_name as approved_last_name',
+        'approved_person.first_name as approved_first_name',
+        'approved_person.middle_name as approved_middle_name',
+        'approved_person.signature as approved_signature',
+		'approved_by_finance_person.last_name as approved_by_finance_last_name',
+        'approved_by_finance_person.first_name as approved_by_finance_first_name',
+        'approved_by_finance_person.middle_name as approved_by_finance_middle_name',
+        'approved_by_finance_person.signature as approved_by_finance_signature'
+    )
+    ->first();
+
+		// dd($my_request_supplies_details);
+	
+	
+		return view('pc.my_request_po_data_form',compact('role','teacher','person','inventory_list','finance_head','pc','my_request_supplies','my_request_supplies_details','pc_details'));
 	}
 
 	

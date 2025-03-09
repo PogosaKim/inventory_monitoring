@@ -135,9 +135,9 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="card-title">New Purchase Order</h5>
-                    {{-- <button id="approveAllBtn" class="btn btn-success btn-sm">
+                    <button id="approveAllBtn" class="btn btn-success btn-sm">
                         <span class="fa fa-check"></span> Approve All
-                    </button> --}}
+                    </button>
                 </div>
                 <table id="requestTable" class="table table-bordered">
                     <thead>
@@ -207,77 +207,146 @@ $(document).ready(function() {
           
       });
 
-      $("#approveAllBtn").on("click", function() {
+    //   $("#approveAllBtn").on("click", function() {
+    // let pendingRequests = [];
+
+    // // Get all pending requests from the table
+    //     $("#requestTable .approvedBtn").each(function() {
+    //         pendingRequests.push($(this).data("request_supplies_id"));
+    //     });
+
+    //     if (pendingRequests.length === 0) {
+    //         Swal.fire({
+    //             icon: 'info',
+    //             title: 'No Pending Requests',
+    //             text: 'There are no requests left to approve.',
+    //         });
+    //         return;
+    //     }
+
+    //     Swal.fire({
+    //         title: "Are you sure?",
+    //         text: "To approve all pending requests",
+    //         icon: "warning",
+    //         showCancelButton: true,
+    //         confirmButtonColor: "#3085d6",
+    //         cancelButtonColor: "#d33",
+    //         confirmButtonText: "Yes, approve all!"
+    //     }).then((result) => {
+    //         if (result.isConfirmed) {
+    //             $.ajax({
+    //                 url: "{{ url('finance/approve_all_supplies') }}",
+    //                 type: "POST",
+    //                 data: {
+    //                     request_supplies_ids: pendingRequests, 
+    //                     _token: "{{ csrf_token() }}"
+    //                 },
+    //                 success: function(response) {
+    //                     if (response.status === 'success') {
+    //                         Swal.fire({
+    //                             icon: 'success',
+    //                             title: 'Approved!',
+    //                             text: 'All pending requests have been approved successfully!',
+    //                         }).then(() => {
+    //                             oTable.ajax.reload();
+    //                         });
+    //                     } else {
+    //                         Swal.fire({
+    //                             icon: 'error',
+    //                             title: 'Error',
+    //                             text: response.message || 'Failed to approve requests. Please try again.',
+    //                         });
+    //                     }
+    //                 },
+    //                 error: function(xhr) {
+    //                     let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+    //                     Swal.fire({
+    //                         icon: 'error',
+    //                         title: 'Error',
+    //                         text: errorMessage,
+    //                     });
+    //                     console.log(xhr.responseText);
+    //                 }
+    //             });
+
+    //         }
+    //     });
+    // });
+
+    $("#approveAllBtn").on("click", function() {
     let pendingRequests = [];
 
-    // Get all pending requests from the table
-        $("#requestTable .approvedBtn").each(function() {
-            pendingRequests.push($(this).data("request_supplies_id"));
-        });
+    $("#requestTable .approvedBtn").each(function() {
+        let requestId = $(this).data("request_supplies_id");
 
-        if (pendingRequests.length === 0) {
-            Swal.fire({
-                icon: 'info',
-                title: 'No Pending Requests',
-                text: 'There are no requests left to approve.',
-            });
-            return;
+        if (requestId) {
+            if (Array.isArray(requestId)) {
+                pendingRequests = pendingRequests.concat(requestId); 
+            } else {
+                pendingRequests.push(requestId);
+            }
         }
+    });
 
+    if (pendingRequests.length === 0) {
         Swal.fire({
-            title: "Are you sure?",
-            text: "To approve all pending requests",
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
-            confirmButtonText: "Yes, approve all!"
-        }).then((result) => {
-            if (result.isConfirmed) {
-                $.ajax({
-                    url: "{{ url('finance/approve_all_supplies') }}",
-                    type: "POST",
-                    data: {
-                        request_supplies_ids: pendingRequests, 
-                        _token: "{{ csrf_token() }}"
-                    },
-                    success: function(response) {
-                        if (response.status === 'success') {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Approved!',
-                                text: 'All pending requests have been approved successfully!',
-                            }).then(() => {
-                                oTable.ajax.reload();
-                            });
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Error',
-                                text: response.message || 'Failed to approve requests. Please try again.',
-                            });
-                        }
-                    },
-                    error: function(xhr) {
-                        let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+            icon: 'info',
+            title: 'No Pending Requests',
+            text: 'There are no requests left to approve.',
+        });
+        return;
+    }
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "To approve all pending requests",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, approve all!"
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                url: "{{ url('finance/approve_all_supplies') }}",
+                type: "POST",
+                data: $.param({ 'request_supplies_ids': pendingRequests }) + "&_token={{ csrf_token() }}", 
+                success: function(response) {
+                    if (response.status === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Approved!',
+                            text: 'All pending requests have been approved successfully!',
+                        }).then(() => {
+                            oTable.ajax.reload();
+                        });
+                    } else {
                         Swal.fire({
                             icon: 'error',
                             title: 'Error',
-                            text: errorMessage,
+                            text: response.message || 'Failed to approve requests. Please try again.',
                         });
-                        console.log(xhr.responseText);
                     }
-                });
-
-            }
-        });
+                },
+                error: function(xhr) {
+                    let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: errorMessage,
+                    });
+                    console.log(xhr.responseText);
+                }
+            });
+        }
     });
+});
+
 
 
 
       oTable.on("click", ".approvedBtn", function() {
-            const request_supplies_id = $(this).data("request_supplies_id");
-
+        const request_supplies_ids = $(this).data("request_supplies_id"); 
             Swal.fire({
                 title: "Are you sure?",
                 text: "To Approved this request",
@@ -292,7 +361,7 @@ $(document).ready(function() {
                         url: "{{ url('finance/approved_supplies') }}",
                         type: "POST",
                         data: {
-                          request_supplies_id: request_supplies_id,
+                            request_supplies_ids: request_supplies_ids,
                             _token: "{{ csrf_token() }}"
                         },
                         success: function(response) {

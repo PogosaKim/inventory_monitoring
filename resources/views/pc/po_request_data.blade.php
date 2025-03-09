@@ -465,7 +465,7 @@ $(document).ready(function() {
     oTable.on("click", ".viewDetail", function() {
         const request_supplies_id = $(this).data("request_supplies_id");
         const request_supplies_code = $(this).data("request_supplies_code");
-        const url = "{{ url('pc/my_request_data_form') }}?request_supplies_id=" + request_supplies_id + "&request_supplies_code=" + request_supplies_code;
+        const url = "{{ url('pc/my_request_po_data_form') }}?request_supplies_id=" + request_supplies_id + "&request_supplies_code=" + request_supplies_code;
         window.open(url);
     });
 

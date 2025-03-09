@@ -84,6 +84,7 @@ Route::get('pc/purchase_order','PropertyCustodian@PurchaseOrder');
 Route::post('pc/create_request','PropertyCustodian@Createrequest');
 Route::get('pc/my_request_data_form','PropertyCustodian@my_request_data_form');
 Route::get('pc/my_request_accept_data_form','PropertyCustodian@my_request_accept_data_form');
+Route::get('pc/my_request_po_data_form','PropertyCustodian@my_request_po_data_form');
 
 
 Route::get('pc/purchase_records','PropertyCustodian@GetPurchaseRecords');
