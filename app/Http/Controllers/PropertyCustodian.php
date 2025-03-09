@@ -314,11 +314,12 @@ class PropertyCustodian extends Controller {
 
 	public function CheckedStatusRequestData()
 	{
-		$check_status_request_data = RequestSupplies::where('request_supplies.action_type', 4)
-			->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+		$check_status_request_data = RequestSupplies::join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
 			->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+			->where('inventory.inv_quantity', '<', 5)
 			->select('request_supplies.action_type', 'inventory_name.name as item_name') 
 			->get();
+			// dd($check_status_request_data);
 
 		return response()->json([
 			'check_status_request' => $check_status_request_data,

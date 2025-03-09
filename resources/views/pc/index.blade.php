@@ -165,8 +165,8 @@ function checkStatusRequest() {
         if (res.check_status_request.length !== 0) {
             $.each(res.check_status_request, function(index, item) {
                 Swal.fire({
-                    title: "New Release Item for Approval",
-                    html: "A Release request for <b>" + item.item_name + "</b> needs your approval.",
+                  title: "Low Inventory Alert",
+                    html: "A purchase request is needed for <b>" + item.item_name + "</b> due to low stock.",
                     icon: 'info',
                     confirmButtonText: 'Review Now',
                     showCancelButton: true,
@@ -174,7 +174,7 @@ function checkStatusRequest() {
                     allowOutsideClick: false
                 }).then((result) => {
                     if (result.isConfirmed) {
-						window.location.href = "{{ url('pc/new_release_data') }}";
+						window.location.href = "{{ url('pc/purchase_order') }}";
                     }
                 });
             });
