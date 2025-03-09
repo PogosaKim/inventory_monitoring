@@ -9,10 +9,9 @@
     background-color: red !important;
     color: white !important;
   }
-
 </style>
 
-<div class="container-fluid background_sidebar">
+<div class="container-fluid">
 	<script>
 		var isFluid = JSON.parse(localStorage.getItem('isFluid'));
             if (isFluid) {
@@ -44,7 +43,7 @@
 			</a>
 		</div>
 
-		@include('pc_sidebar');
+		@include('finance_sidebar');
 
 	</nav>
 
@@ -60,7 +59,7 @@
 			<ul class="navbar-nav navbar-nav-icons ms-auto flex-row align-items-center">
 				<li class="nav-item">
                     @if (Auth::check())
-                        <p class="dropdown-item">Hi Property Custodian, {{ Auth::user()->name }}</p>
+                        <p class="dropdown-item">Hi Finance, {{ Auth::user()->name }}</p>
                     @endif
 					<div class="theme-control-toggle fa-icon-wait px-2"><input
 							class="form-check-input ms-0 theme-control-toggle-input" id="themeControlToggle"
@@ -137,7 +136,7 @@
             <div class="card-body">
               <div class="row flex-between-center">
                 <div class="col-md">
-                  <h5 class="mb-2 mb-md-0">Welcome Back Property Custodian!</h5>
+                  <h5 class="mb-2 mb-md-0">MY REQUEST SUPPLIES</h5>
                 </div>
               </div>
             </div>
@@ -152,7 +151,7 @@
             </div>
          
             <div class="text-center mb-4">
-                <h5 style="font-size:18px;">PURCHASE ORDER FORM</h5>
+                <h5 style="font-size:18px;">REQUEST FORM</h5>
             </div>
         
          
@@ -164,15 +163,17 @@
                             <option value="{{ $role->id }}"> {{ $role->name }}</option>
                         </select>
                     </div>                    
-                    <div style="flex-basis: 48%;">Date: <input type="date" name="date" class="form-control" id="date-input" /></div>
+                    <div style="flex-basis: 48%;">
+                        Date: <input type="date" name="date" class="form-control" id="date-input" 
+                               value="{{ isset($release_date) ? $release_date : date('Y-m-d') }}" />
+                    </div>
+                    
                 </div>
         
             
                 <div class="d-flex justify-content-start mb-3">
                     <div style="flex-basis: 48%;">From (DEPT.): 
-                        {{-- <select name="school_department_id" id="school_department_id" class="form-control">
-                            <option value="{{ $teacher->school_department_id }}"> {{ $teacher->name }}</option>
-                        </select> --}}
+                        <input type="text" class="form-control" value="{{ $my_request_supplies_details->department_name }}" readonly>
                     </div>
                                        
                 </div>
@@ -180,72 +181,104 @@
                
                 <div class="mb-4">
                     <table class="table table-bordered">
-                        <button type="button" id="add-row" class="btn btn-primary" style="margin-bottom:10px; margin-left:90%;">Add</button>
                         <thead>
                             <tr>
                                 <th>ITEMS / DESCRIPTION</th>
                                 <th>QUANTITY</th>
                                 <th>UNIT PRICE</th>
                                 <th>TOTAL AMOUNT</th>
-                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
+                            @foreach($my_request_supplies as $request)
                             <tr>
                                 <td>
-                                    <select name="inventory_id[]" class="form-control inventory_id">
-                                        <option value="0" data-price="0">--Select--</option>
-                                        @foreach ($inventory_list as $inventory)
-                                            <option value="{{ $inventory->inventory_id }}" data-price="{{ $inventory->inv_amount }}">
-                                                {{ $inventory->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <input type="text" class="form-control" value="{{ $request->name }}" readonly>
                                 </td>
-                                <td><input type="number" name="request_quantity[]" class="form-control request_quantity" min="1" value="1"/></td>
-                                <td><input type="text" name="inv_unit_price[]" class="form-control inv_unit_price" readonly/></td>
-                                <td><input type="text" name="inv_unit_total_price[]" class="form-control inv_unit_total_price" readonly/></td>
-                                <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
+                                <td>
+                                    <input type="number" class="form-control" value="{{ $request->request_quantity }}" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" value="₱{{ number_format($request->inv_unit_price, 2) }}" readonly>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control" value="₱{{ number_format($request->inv_unit_total_price, 2) }}" readonly>
+                                </td>
                             </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 
                 </div>
+
                 <div class="row justify-content-center">
+                  
                     <div class="col-md-2 text-center">
-                        <p>Requested by: </p>
-                        TEACHER 
+                        <p>Requested by:</p>
+                        
+                        @if (!empty($my_request_supplies_details->requested_signature))
+                            <img src="{{ asset($my_request_supplies_details->requested_signature) }}" alt="HR Signature" 
+                                 style="width: 100%; height: auto; margin-bottom: 10px;">
+                        @else
+                            <p>No signature available</p>
+                        @endif
+                        <b>{{ $my_request_supplies_details->requested_last_name }}, {{ $my_request_supplies_details->requested_first_name }} {{ $my_request_supplies_details->requested_middle_name }}</b>
                         <hr style="width: 50%; border-color: #333; margin: 10px auto;">
                     </div>
+                
+               
                     <div class="col-md-2 text-center">
-                        <p>Recommending Approval: </p>
-                        DEAN
-                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
-                    </div>
+                      <p>Recommending Approval:</p>
+                      
+                      @if (!empty($my_request_supplies_details->approved_signature))
+                          <img src="{{ asset($my_request_supplies_details->approved_signature) }}" alt="HR Signature" 
+                               style="width: 100%; height: auto; margin-bottom: 10px;">
+                      @else
+                          <p>No signature available</p>
+                      @endif
+                      <b>{{ $my_request_supplies_details->approved_last_name }}, {{ $my_request_supplies_details->approved_first_name }} {{ $my_request_supplies_details->approved_middle_name }}</b>
+                      <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                  </div>
+                
+                
+                  <div class="col-md-2 text-center">
+                    <p>Approved By:</p>
+                    
+                    @if (!empty($my_request_supplies_details->approved_by_finance_signature))
+                        <img src="{{ asset($my_request_supplies_details->approved_by_finance_signature) }}" alt="HR Signature" 
+                             style="width: 100%; height: auto; margin-bottom: 10px;">
+                    @else
+                        <p>No signature available</p>
+                    @endif
+                    <b>{{ $my_request_supplies_details->approved_by_finance_last_name }}, {{ $my_request_supplies_details->approved_by_finance_first_name }} {{ $my_request_supplies_details->approved_by_finance_middle_name }}</b>
+                    <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                </div>
+                
+              
                     <div class="col-md-2 text-center">
-                        <p>Approved By: </p>
-                        SP / FH
+                        <p>Received By:</p>
+                        
+                        <img src="{{ asset('path/to/signature.png') }}" alt="Signature" 
+                             style="width: 50%; height: auto; margin-bottom: 10px; display: none;"> 
+                        
                         <hr style="width: 50%; border-color: #333; margin: 10px auto;">
-                    </div>
-                    <div class="col-md-2 text-center">
-                        <p>Recieved By:</p>
-                        PC
-                        <hr style="width: 50%; border-color: #333; margin: 10px auto;">
+                        
                     </div>
                 </div>
+                
 
                 <div class="row justify-content-between">
                     <div class="col-md-2 text-center">
                         <p>Confirmed as to Budget:</p>
-{{--                     
-                        @if (!empty($finance_head->signature))
+                    
+                        @if (!empty($my_request_supplies_details->approved_signature))
                             <div style="display: flex; justify-content: center; margin-top: 10px;">
-                                <img src="{{ asset($person->signature) }}" alt="HR Signature" 
-                                     style="width: 60%; height: auto;">
+                                <img src="{{ asset($my_request_supplies_details->approved_signature) }}" alt="HR Signature" 
+                                     style="width: 100%; height: auto;">
                             </div>
                         @else
                             <p></p>
-                        @endif --}}
+                        @endif
                     
                         <b style="display: block; margin-top: 5px;">
                             @if(isset($finance_head) && $finance_head)
@@ -262,14 +295,14 @@
                     
                     <div class="col-md-2 text-center">
                         <p>Received for P.O:</p>
-                        @if (!empty($pc->signature))
+                        {{-- @if (!empty($pc->signature))
                             <div style="display: flex; justify-content: center; margin-top: 10px;">
-                                <img src="{{ asset($person->signature) }}" alt="HR Signature" 
-                                     style="width: 60%; height: auto;">
+                                <img src="{{ asset($my_request_supplies_details->approved_signature) }}" alt="HR Signature" 
+                                     style="width: 100%; height: auto;">
                             </div>
                         @else
                             <p></p>
-                        @endif
+                        @endif --}}
                     
                         <b style="display: block; margin-top: 5px;">
                             {{ $pc->last_name }}, {{ $pc->first_name }} {{ $pc->middle_name }}
@@ -281,27 +314,13 @@
                     </div>
                 </div>
 
-              
-                
-                
-                
-                
-
-               
-                
-                
-                
-             
-                <div class="text-center">
-                    <button class="btn btn-primary" id="requestSubmit">Submit Request</button>
-                </div>
 
                 <br>
             </form>
         </div>
         
-
-       
+        
+        
 
 
         
@@ -314,139 +333,6 @@
 
 @section('scripts')
 <script>
-
-    document.getElementById('date-input').value = new Date().toISOString().split('T')[0];
-
-    
-    $(document).on('change', '.inventory_id', function() {
-        let selectedOption = $(this).find(':selected');
-        let unitPrice = selectedOption.data('price'); // Get price from data attribute
-        let row = $(this).closest('tr');
-
-        row.find('.inv_unit_price').val(unitPrice); // Set unit price
-        row.find('.request_quantity').trigger('input'); // Trigger recalculation
-    });
-
-    // When quantity is changed, update total price
-    $(document).on('input', '.request_quantity', function() {
-        let row = $(this).closest('tr');
-        let quantity = parseFloat($(this).val()) || 0;
-        let unitPrice = parseFloat(row.find('.inv_unit_price').val()) || 0;
-        let totalPrice = quantity * unitPrice;
-
-        row.find('.inv_unit_total_price').val(totalPrice.toFixed(2)); // Set total price
-    });
-
- 
- $(document).ready(function() {
-    $('#inventory_id').select2({
-            placeholder: "--Select--",
-            allowClear: true
-        });
-    $('#add-row').on('click', function() {
-        var newRow = `<tr>
-                        <td>
-                            <select name="inventory_id[]" class="form-control inventory_id">
-                                <option value="0" data-price="0">--Select--</option>
-                                @foreach ($inventory_list as $inventory)
-                                    <option value="{{ $inventory->inventory_id }}" data-price="{{ $inventory->inv_amount }}">
-                                        {{ $inventory->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </td>
-                        <td><input type="number" name="request_quantity[]" class="form-control request_quantity" min="1" value="1"/></td>
-                       <td><input type="text" name="inv_unit_price[]" class="form-control inv_unit_price" readonly/></td>
-                        <td><input type="text" name="inv_unit_total_price[]" class="form-control inv_unit_total_price" readonly/></td>
-                        <td><button type="button" class="btn btn-danger remove-row">Remove</button></td>
-                    </tr>`;
-            $('table tbody').append(newRow);
-            toggleRemoveButtonState();
-        });
-
-        $('table').on('click', '.remove-row', function() {
-            $(this).closest('tr').remove();
-            toggleRemoveButtonState();
-        });
-
-        function toggleRemoveButtonState() {
-            if ($('table tbody tr').length > 1) {
-                $('table tbody tr:first-child .remove-row').prop('disabled', false);
-            } else {
-                $('table tbody tr .remove-row').prop('disabled', true);
-            }
-        }
-
-        
-        $('#requestSubmit').on('click', function(e) {
-            e.preventDefault();
-
-            var isValid = true;
-            $('table tbody tr').each(function() {
-                var inventoryId = $(this).find('select[name="inventory_id[]"]').val();
-                var quantity = $(this).find('input[name="request_quantity[]"]').val();
-                
-                if (inventoryId == '0' || quantity <= 0) {
-                    isValid = false;
-                    $(this).addClass('bg-warning');  
-                } else {
-                    $(this).removeClass('bg-warning');
-                }
-            });
-
-            if (!isValid) {
-                Swal.fire({
-                    icon: 'warning',
-                    title: 'Incomplete Data',
-                    text: 'Please fill in all the fields before submitting.',
-                });
-                return;  
-            }
-
-            const formData = new FormData(document.getElementById('teacherRequestForm'));
-            var btn = $(this);
-            var html = $(this).html();
-
-            $.ajax({
-                url: "{{ url('pc/create_request') }}",
-                type: "POST",
-                data: formData,
-                processData: false,  
-                contentType: false, 
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Success',
-                            text: 'Request successfully submitted!',
-                        }).then(() => {
-                            location.reload();
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'Failed to create the request. Please try again.',
-                        });
-                    }
-                },
-                error: function(xhr) {
-                    let errorMessage = xhr.responseJSON?.message || 'An error occurred. Please try again.';
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: errorMessage,
-                    });
-                    console.log(xhr.responseText);
-                }
-            });
-        });
-
-
-
-});
-
-
 
 </script>
 

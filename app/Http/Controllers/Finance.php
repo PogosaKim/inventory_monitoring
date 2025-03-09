@@ -3,6 +3,7 @@
 use App\Http\Requests;
 use App\Http\Controllers\Controller;
 use App\Person;
+use App\PurchaseOrder;
 use App\RequestSupplies;
 use App\Roles;
 use App\User;
@@ -298,6 +299,66 @@ class Finance extends Controller {
 		return view('finance.my_request_form',compact('role','teacher','person','inventory_list','finance_head','pc','my_request_supplies','my_request_supplies_details'));
 	}
 
+	public function my_request_purchase_data_form(){
+		$request_supplies_id = \Request::get('request_supplies_id');
+		$request_supplies_code = \Request::get('request_supplies_code');
+		// dd($request_supplies_code);
+		$role = Roles::where('id', 3)
+			->select('id', 'name')
+			->first();
+	
+	
+		$finance_head = Person::where('person.id',24)->first();
+		$pc = Person::where('person.id',1)->first();
+	
+		$request_supplies = RequestSupplies::where('id', $request_supplies_id)->first();
+		$release_date = $request_supplies->release_date ? : date('Y-m-d');
+		$my_request_supplies = PurchaseOrder::join('request_supplies','purchase_order.request_supplies_id','=','request_supplies.id')
+		->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+		->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+		->where('request_supplies.request_supplies_code', $request_supplies_code)
+		->select('inventory_name.name', 'request_supplies.request_quantity', 'request_supplies.inv_unit_price', 'request_supplies.inv_unit_total_price','request_supplies.date')
+		->get();
+
+	$my_request_supplies_details = RequestSupplies::join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+    ->leftjoin('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+    ->leftjoin('school_department', 'request_supplies.school_department_id', '=', 'school_department.id')
+    ->leftjoin('users as requested_user', 'request_supplies.requested_by', '=', 'requested_user.id')
+    ->leftjoin('users as approved_user', 'request_supplies.approved_by', '=', 'approved_user.id')
+	->leftjoin('users as approved_by_finance_user', 'request_supplies.approved_by_finance', '=', 'approved_by_finance_user.id') 
+    ->leftjoin('person as requested_person', 'requested_user.person_id', '=', 'requested_person.id')
+    ->leftjoin('person as approved_person', 'approved_user.person_id', '=', 'approved_person.id')
+	->leftjoin('person as approved_by_finance_person', 'approved_by_finance_user.person_id', '=', 'approved_by_finance_person.id')
+    ->where('request_supplies.id', $request_supplies_id)
+    ->select(
+        'inventory_name.name',
+        'request_supplies.request_quantity',
+        'request_supplies.inv_unit_price',
+        'request_supplies.inv_unit_total_price',
+        'request_supplies.date',
+        'school_department.name as department_name',
+        'requested_person.last_name as requested_last_name',
+        'requested_person.first_name as requested_first_name',
+        'requested_person.middle_name as requested_middle_name',
+        'requested_person.signature as requested_signature',
+        'approved_person.last_name as approved_last_name',
+        'approved_person.first_name as approved_first_name',
+        'approved_person.middle_name as approved_middle_name',
+        'approved_person.signature as approved_signature',
+		'approved_by_finance_person.last_name as approved_by_finance_last_name',
+        'approved_by_finance_person.first_name as approved_by_finance_first_name',
+        'approved_by_finance_person.middle_name as approved_by_finance_middle_name',
+        'approved_by_finance_person.signature as approved_by_finance_signature'
+    )
+    ->first();
+
+		// dd($my_request_supplies_details);
+	
+	
+		return view('finance.my_request_purchase_data_form',compact('role','teacher','person','inventory_list','finance_head','pc','my_request_supplies','my_request_supplies_details'));
+	}
+
+
 
 	public function GetNewPurchaseRequest(){
 		$gen_user = Auth::user()->id;
@@ -324,6 +385,7 @@ class Finance extends Controller {
 				'request_supplies.date',
 				'request_supplies.action_type',
 				'request_supplies.is_request_purchase_order',
+				'request_supplies.request_supplies_code',
 				DB::raw("GROUP_CONCAT(DISTINCT inventory_name.name ORDER BY inventory_name.name ASC SEPARATOR ' / ') as item_names"),
 				DB::raw("GROUP_CONCAT(request_supplies.request_quantity ORDER BY inventory_name.name ASC SEPARATOR ' / ') as request_quantities"),
 				DB::raw("GROUP_CONCAT(request_supplies.id ORDER BY request_supplies.id ASC) as request_supplies_ids")

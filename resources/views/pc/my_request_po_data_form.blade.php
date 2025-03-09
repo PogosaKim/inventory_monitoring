@@ -173,7 +173,10 @@
             
                 <div class="d-flex justify-content-start mb-3">
                     <div style="flex-basis: 48%;">From (DEPT.): 
-                        <input type="text" class="form-control" value="{{ $my_request_supplies_details->department_name }}" readonly>
+                        <input type="text" class="form-control" 
+                        value="{{ isset($my_request_supplies_details) ? $my_request_supplies_details->department_name : '' }}" 
+                        readonly>
+                 
                     </div>
                                        
                 </div>
@@ -271,7 +274,7 @@
                 <div class="row justify-content-between">
                     <div class="col-md-2 text-center">
                         <p>Confirmed as to Budget:</p>
-{{--                     
+                    
                         @if (!empty($finance_head->signature))
                             <div style="display: flex; justify-content: center; margin-top: 10px;">
                                 <img src="{{ asset($my_request_supplies_details->approved_signature) }}" alt="HR Signature" 
@@ -279,7 +282,7 @@
                             </div>
                         @else
                             <p></p>
-                        @endif --}}
+                        @endif
                     
                         <b style="display: block; margin-top: 5px;">
                             @if(isset($finance_head) && $finance_head)
@@ -307,7 +310,10 @@
                                      style="width: 100%; height: auto;">
                             </div>
                         @else
-                            <p></p>
+                            <div style="display: flex; justify-content: center; margin-top: 10px;">
+                                <img src="{{ asset($pc->signature) }}" alt="HR Signature" 
+                                    style="width: 100%; height: auto;">
+                            </div>
                         @endif
                     
                         <b style="display: block; margin-top: 5px;">

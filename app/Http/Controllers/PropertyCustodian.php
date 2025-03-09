@@ -63,8 +63,8 @@ class PropertyCustodian extends Controller {
 
 
 		$inventory_list = Inventory::join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
-		->select('inventory.id as inventory_id', 'inventory_name.name', 'inventory_name.description', 'inventory.inv_unit', 'inventory.inv_quantity')
-		->where('inventory.inv_quantity',0)
+		->select('inventory.id as inventory_id', 'inventory_name.name', 'inventory_name.description', 'inventory.inv_unit', 'inventory.inv_quantity','inventory.inv_amount')
+		->where('inventory.inv_quantity', '<', 5)
 		->get();
 
 
@@ -571,16 +571,16 @@ class PropertyCustodian extends Controller {
 
 		$gen_user = Auth::user()->person_id;
 		$pc_details = Person::find($gen_user);
-
+		// dd($pc_details);
 	$my_request_supplies_details = RequestSupplies::join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
     ->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
-    ->join('school_department', 'request_supplies.school_department_id', '=', 'school_department.id')
-    ->join('users as requested_user', 'request_supplies.requested_by', '=', 'requested_user.id')
-    ->join('users as approved_user', 'request_supplies.approved_by', '=', 'approved_user.id')
-	->join('users as approved_by_finance_user', 'request_supplies.approved_by_finance', '=', 'approved_by_finance_user.id') 
-    ->join('person as requested_person', 'requested_user.person_id', '=', 'requested_person.id')
-    ->join('person as approved_person', 'approved_user.person_id', '=', 'approved_person.id')
-	->join('person as approved_by_finance_person', 'approved_by_finance_user.person_id', '=', 'approved_by_finance_person.id')
+    ->leftjoin('school_department', 'request_supplies.school_department_id', '=', 'school_department.id')
+    ->leftjoin('users as requested_user', 'request_supplies.requested_by', '=', 'requested_user.id')
+    ->leftjoin('users as approved_user', 'request_supplies.approved_by', '=', 'approved_user.id')
+	->leftjoin('users as approved_by_finance_user', 'request_supplies.approved_by_finance', '=', 'approved_by_finance_user.id') 
+    ->leftjoin('person as requested_person', 'requested_user.person_id', '=', 'requested_person.id')
+    ->leftjoin('person as approved_person', 'approved_user.person_id', '=', 'approved_person.id')
+	->leftjoin('person as approved_by_finance_person', 'approved_by_finance_user.person_id', '=', 'approved_by_finance_person.id')
     ->where('request_supplies.request_supplies_code', $request_supplies_code)
     ->select(
         'inventory_name.name',
@@ -625,28 +625,28 @@ class PropertyCustodian extends Controller {
 		$request_supplies = RequestSupplies::where('id', $request_supplies_id)->first();
 		$release_date = $request_supplies->release_date ? : date('Y-m-d');
 
-		$my_request_supplies = PurchaseOrder::join('request_supplies','purchase_order.request_supplies_id','=','request_supplies.id')
+		$my_request_supplies = RequestSupplies::leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
 		->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
 		->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
-		->where('purchase_order.request_supplies_id', $request_supplies_id)
+		->where('request_supplies.id', $request_supplies_id)
 		->select('inventory_name.name', 'inventory.inv_amount','inventory.id as inventory_id','request_supplies.request_quantity', 'request_supplies.inv_unit_price', 'request_supplies.inv_unit_total_price','request_supplies.date')
 		->get();
-		// dd($my_request_supplies
+		// dd($my_request_supplies);
 
 		$gen_user = Auth::user()->person_id;
 		$pc_details = Person::find($gen_user);
 
-	$my_request_supplies_details = PurchaseOrder::join('request_supplies','purchase_order.request_supplies_id','=','request_supplies.id')
+	$my_request_supplies_details = RequestSupplies::leftjoin('purchase_order','request_supplies.id','=','purchase_order.request_supplies_id')
 	->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
     ->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
-    ->join('school_department', 'request_supplies.school_department_id', '=', 'school_department.id')
-    ->join('users as requested_user', 'request_supplies.requested_by', '=', 'requested_user.id')
-    ->join('users as approved_user', 'request_supplies.approved_by', '=', 'approved_user.id')
-	->join('users as approved_by_finance_user', 'request_supplies.approved_by_finance', '=', 'approved_by_finance_user.id') 
-    ->join('person as requested_person', 'requested_user.person_id', '=', 'requested_person.id')
-    ->join('person as approved_person', 'approved_user.person_id', '=', 'approved_person.id')
-	->join('person as approved_by_finance_person', 'approved_by_finance_user.person_id', '=', 'approved_by_finance_person.id')
-	->where('purchase_order.request_supplies_id', $request_supplies_id)
+    ->leftjoin('school_department', 'request_supplies.school_department_id', '=', 'school_department.id')
+    ->leftjoin('users as requested_user', 'request_supplies.requested_by', '=', 'requested_user.id')
+    ->leftjoin('users as approved_user', 'request_supplies.approved_by', '=', 'approved_user.id')
+	->leftjoin('users as approved_by_finance_user', 'request_supplies.approved_by_finance', '=', 'approved_by_finance_user.id') 
+    ->leftjoin('person as requested_person', 'requested_user.person_id', '=', 'requested_person.id')
+    ->leftjoin('person as approved_person', 'approved_user.person_id', '=', 'approved_person.id')
+	->leftjoin('person as approved_by_finance_person', 'approved_by_finance_user.person_id', '=', 'approved_by_finance_person.id')
+	->where('request_supplies.id', $request_supplies_id)
     ->select(
         'inventory_name.name',
         'request_supplies.request_quantity',

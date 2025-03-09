@@ -302,7 +302,10 @@
                                      style="width: 100%; height: auto;">
                             </div>
                         @else
-                            <p></p>
+                        <div style="display: flex; justify-content: center; margin-top: 10px;">
+                            <img src="{{ asset($pc_details->signature) }}" alt="HR Signature" 
+                                 style="width: 100%; height: auto;">
+                        </div>
                         @endif
                     
                         <b style="display: block; margin-top: 5px;">

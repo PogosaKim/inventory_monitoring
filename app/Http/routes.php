@@ -152,6 +152,7 @@ Route::get('finance/finance/check_status_request','Finance@CheckedStatusRequestD
 Route::get('finance/purchase_order_data','Finance@GetPurchaseOrderData');
 Route::get('finance/new_purchase_request','Finance@GetNewPurchaseRequest');
 Route::get('finance/my_request_data_form','Finance@my_request_data_form');
+Route::get('finance/my_request_purchase_data_form','Finance@my_request_purchase_data_form');
 
 
 
