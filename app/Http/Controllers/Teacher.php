@@ -11,7 +11,10 @@ use App\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+
 
 class Teacher extends Controller {
 
@@ -140,23 +143,42 @@ public function my_request_data_form(){
 		return view('teacher.request',compact('role','teacher','person','inventory_list','finance_head','pc'));
 	}
 
-public function Createrequest()
+	public function Createrequest()
 {
     $user_role_id = \Request::get('user_role_id');
     $date = \Request::get('date');
     $school_department_id = \Request::get('school_department_id');
     $inventory_ids = \Request::get('inventory_id');
     $request_quantities = \Request::get('request_quantity');
-	$inv_unit_prices = \Request::get('inv_unit_price');
-	$inv_unit_total_prices = \Request::get('inv_unit_total_price');
-
-	
+    $inv_unit_prices = \Request::get('inv_unit_price');
+    $inv_unit_total_prices = \Request::get('inv_unit_total_price');
+    
     $request_supplies_code = Str::random(5);
 
     try {
         \DB::beginTransaction();
 
+        $user = User::where('school_department_id', $school_department_id)->first();
+        
+        if (!$user) {
+            throw new \Exception('User not found for this department');
+        }
+
+        $inventoryDetails = [];
         foreach ($inventory_ids as $index => $inventoryId) {
+            $inventory = \DB::table('inventory')->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
+                ->where('inventory.id', $inventoryId)
+                ->first();
+
+            $itemName = $inventory && isset($inventory->name) ? $inventory->name : 'Unknown Item';
+            
+            $inventoryDetails[] = [
+                'name' => $itemName,
+                'quantity' => $request_quantities[$index],
+                'unit_price' => $inv_unit_prices[$index],
+                'total_price' => $inv_unit_total_prices[$index]
+            ];
+
             RequestSupplies::create([
                 'inventory_id' => $inventoryId,
                 'requested_by' => Auth::user()->id,
@@ -165,17 +187,25 @@ public function Createrequest()
                 'date' => $date,
                 'request_quantity' => $request_quantities[$index],
                 'action_type' => 1,
-                'inv_unit_price' => $inv_unit_prices[$index],  // Fix here
-        		'inv_unit_total_price' => $inv_unit_total_prices[$index], // Fix here
+                'inv_unit_price' => $inv_unit_prices[$index],
+                'inv_unit_total_price' => $inv_unit_total_prices[$index],
                 'request_supplies_code' => $request_supplies_code
             ]);
         }
+
+        Mail::send('emails.teacher_request',
+            ['inventoryDetails' => $inventoryDetails, 'requestCode' => $request_supplies_code],
+            function($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('New Inventory Request - ' . date('Y-m-d'));
+            }
+        );
 
         \DB::commit();
 
         return response()->json([
             'success' => true,
-            'message' => 'Request submitted successfully!',
+            'message' => 'Request submitted and email sent successfully!',
         ]);
 
     } catch (\Exception $e) {
@@ -183,13 +213,11 @@ public function Createrequest()
 
         return response()->json([
             'success' => false,
-            'message' => 'Failed to submit the request. Please try again.',
+            'message' => 'Failed to submit the request or send email. Please try again.',
             'error' => $e->getMessage(),
         ]);
     }
 }
-
-
 	public function GetTrackingRequest()
 	{
 		$gen_user = Auth::user()->id;

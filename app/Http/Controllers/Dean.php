@@ -12,7 +12,9 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use HTTP_Request2;
 class Dean extends Controller {
 
 	/**
@@ -275,51 +277,149 @@ class Dean extends Controller {
 
 
 
+	
+
 	public function GetApprovedRequest(Request $request)
-{
-    try {
-        $gen_user = Auth::id();
-        $user = User::find($gen_user);
+	{
+		try {
+			$gen_user = Auth::id();
+			$user = User::find($gen_user);
+	
+			if (!$user) {
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'User not found.'
+				]);
+			}
+	
+			$request_supplies_ids = is_array($request->request_supplies_ids) ? 
+									$request->request_supplies_ids : 
+									[$request->request_supplies_ids];
+	
+			// Begin transaction for consistency
+			\DB::beginTransaction();
+	
+			// Update the request supplies
+			$updated = RequestSupplies::whereIn('id', $request_supplies_ids)
+				->update([
+					'approved_by' => $user->id,
+					'action_type' => 2
+				]);
+	
+			if (!$updated) {
+				\DB::rollBack();
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'No records were updated. Please check the request IDs.'
+				]);
+			}
+	
+			// Get the approved requests with their details
+			$approvedRequests = RequestSupplies::whereIn('request_supplies.id', $request_supplies_ids)
+			->join('inventory', 'request_supplies.inventory_id','=','inventory.id')
+			->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
+			->select(
+                'request_supplies.*', // Get all request_supplies columns
+                'inventory_name.name' // Explicitly select the name column
+            )
+			->get();
+			// dd($approvedRequests);
+	
+		
 
-        if (!$user) {
-            return response()->json([
-                'status' => 'failed',
-                'message' => 'User not found.'
-            ]);
-        }
+			$requestedByUser = User::find($approvedRequests->first()->requested_by);
+			
+			$inventoryDetails = [];
+			foreach ($approvedRequests as $approvedRequest) {
+				$inventoryDetails[] = [
+					'name' => $approvedRequest->name ? : 'Unknown Item', 
+					'quantity' => $approvedRequest->request_quantity,
+					'unit_price' => $approvedRequest->inv_unit_price,
+					'total_price' => $approvedRequest->inv_unit_total_price
+				];
+			}
+			$requestCode = $approvedRequests->first()->request_supplies_code;
+	
+			Mail::send('emails.dean_approved',
+				['inventoryDetails' => $inventoryDetails, 'requestCode' => $requestCode],
+				function($message) use ($requestedByUser) {
+					$message->to($requestedByUser->email)
+							->subject('Inventory Request Approved - ' . date('Y-m-d'));
+				}
+			);
 
-        $request_supplies_ids = is_array($request->request_supplies_ids) ? 
-                                $request->request_supplies_ids : 
-                                [$request->request_supplies_ids];
-
-   
-        $updated = RequestSupplies::whereIn('id', $request_supplies_ids)
-            ->update([
-                'approved_by' => $user->id,
-                'action_type' => 2
-            ]);
-
-        if ($updated) {
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Request Supplies Approved successfully.'
-            ]);
-        } else {
-            return response()->json([
-                'status' => 'failed',
-                'message' => 'No records were updated. Please check the request IDs.'
-            ]);
-        }
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'failed',
-            'message' => 'An error occurred while approving the request.',
-            'error' => $e->getMessage(),
-            'line' => $e->getLine()
-        ]);
-    }
-}
+			$smsMessage = "Inventory Request Approved (Code: $requestCode)\n";
+			foreach ($approvedRequests as $approvedRequest) {
+				$itemName = $approvedRequest->name ?: 'Unknown Item';
+				$smsMessage .= "- $itemName: {$approvedRequest->request_quantity} units, Total: " . number_format($approvedRequest->inv_unit_total_price, 2) . "\n";
+			}
+			$smsMessage .= "Thank you, Custodian Office";
+	
+			// Sanitize phone number to E.164 format for Philippine numbers
+			$toPhoneNumber = $requestedByUser->phone_number;
+			if (!preg_match('/^\+\d{10,15}$/', $toPhoneNumber)) {
+				$toPhoneNumber = preg_replace('/[^0-9+]/', '', $toPhoneNumber);
+				if (preg_match('/^09\d{9}$/', $toPhoneNumber)) {
+					$toPhoneNumber = '+63' . substr($toPhoneNumber, 2);
+				} elseif (preg_match('/^09\d{10}$/', $toPhoneNumber)) {
+					$toPhoneNumber = '+63' . substr($toPhoneNumber, 2, 10);
+					\Log::warning("Trimmed invalid 11-digit Philippine number: {$requestedByUser->phone_number} to $toPhoneNumber");
+				} else {
+					throw new \Exception("Unrecognized phone number format: $requestedByUser->phone_number");
+				}
+				if (!preg_match('/^\+63\d{10}$/', $toPhoneNumber)) {
+					throw new \Exception("Invalid phone number format after sanitization: $requestedByUser->phone_number (converted to $toPhoneNumber)");
+				}
+			}
+	
+			// Send SMS using Infobip API
+			$httpRequest = new HTTP_Request2();
+			$infobipBaseUrl = rtrim(env('INFOBIP_BASE_URL'), '/');
+			$fullUrl = $infobipBaseUrl . '/sms/2/text/advanced';
+			if (!filter_var($fullUrl, FILTER_VALIDATE_URL)) {
+				throw new \Exception("Invalid Infobip URL: $fullUrl");
+			}
+			$httpRequest->setUrl($fullUrl);
+			$httpRequest->setMethod(HTTP_Request2::METHOD_POST);
+			$httpRequest->setConfig(['follow_redirects' => true]);
+			$httpRequest->setHeader([
+				'Authorization' => 'App ' . env('INFOBIP_API_KEY'),
+				'Content-Type' => 'application/json',
+				'Accept' => 'application/json'
+			]);
+	
+			$smsPayload = [
+				'messages' => [
+					[
+						'destinations' => [['to' => $toPhoneNumber]],
+						'from' => env('INFOBIP_FROM'),
+						'text' => $smsMessage
+					]
+				]
+			];
+			$httpRequest->setBody(json_encode($smsPayload));
+	
+			$response = $httpRequest->send();
+			if ($response->getStatus() != 200) {
+				throw new \Exception('Infobip SMS failed: ' . $response->getReasonPhrase() . ' - ' . $response->getBody());
+			}
+			\DB::commit();
+	
+			return response()->json([
+				'status' => 'success',
+				'message' => 'Request Supplies Approved successfully and notification sent.'
+			]);
+	
+		} catch (\Exception $e) {
+			\DB::rollBack();
+			return response()->json([
+				'status' => 'failed',
+				'message' => 'An error occurred while approving the request or sending notification.',
+				'error' => $e->getMessage(),
+				'line' => $e->getLine()
+			]);
+		}
+	}
 
 
 // public function GetApprovedAllRequest(Request $request)
