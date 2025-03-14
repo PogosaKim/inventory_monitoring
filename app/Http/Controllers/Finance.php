@@ -11,7 +11,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Mail;
 
 class Finance extends Controller {
 
@@ -503,72 +503,121 @@ class Finance extends Controller {
     // }
 
 	try {
-		$gen_user = Auth::id();
-		$user = User::find($gen_user);
-	
-		if (!$user) {
-			return response()->json([
-				'status' => 'failed',
-				'message' => 'User not found.'
-			]);
-		}
-	
-	
-		$request_supplies_ids = is_array($request->request_supplies_ids) ? 
-								$request->request_supplies_ids : 
-								[$request->request_supplies_ids];
+        $gen_user = Auth::id();
+        $user = User::find($gen_user);
 
-		$get_request_supplies = RequestSupplies::whereIn('id', $request_supplies_ids)->first();
-	
-		if (!$get_request_supplies) {
-			return response()->json([
-				'status' => 'failed',
-				'message' => 'Requested supplies record not found.'
-			]);
-		}
-	
-	
-		$requesting_user = User::find($get_request_supplies->requested_by);
-		if (!$requesting_user) {
-			return response()->json([
-				'status' => 'failed',
-				'message' => 'Requesting user not found.'
-			]);
-		}
-	
+        if (!$user) {
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'User not found.'
+            ]);
+        }
 
-		$updated = RequestSupplies::whereIn('id', $request_supplies_ids)
-			->update([
-				'approved_by_finance' => $user->id,
-				'action_type' => 4
-			]);
-	
-		if ($requesting_user->user_role_id == 1) {
-			$get_request_supplies->update([
-				'is_purchase_order' => 1,
-				'is_request_purchase_order' => 2
-			]);
-		}
-	
-		if ($updated) {
-			return response()->json([
-				'status' => 'success',
-				'message' => 'Request Supplies Approved successfully.'
-			]);
-		} else {
-			return response()->json([
-				'status' => 'failed',
-				'message' => 'No records were updated. Please check the request IDs.'
-			]);
-		}
-	} catch (\Exception $e) {
-		return response()->json([
-			'status' => 'failed',
-			'message' => 'An error occurred while approving the request.',
-			'error' => $e->getMessage(),
-			'line' => $e->getLine()
-		]);
-	}
+        $request_supplies_ids = is_array($request->request_supplies_ids) ? 
+                                $request->request_supplies_ids : 
+                                [$request->request_supplies_ids];
+
+        // Begin transaction for consistency
+        \DB::beginTransaction();
+
+        $get_request_supplies = RequestSupplies::whereIn('id', $request_supplies_ids)->first();
+        if (!$get_request_supplies) {
+            \DB::rollBack();
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Requested supplies record not found.'
+            ]);
+        }
+
+        $requesting_user = User::find($get_request_supplies->requested_by);
+        if (!$requesting_user) {
+            \DB::rollBack();
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'Requesting user not found.'
+            ]);
+        }
+
+        // Update the request supplies with finance approval
+        $updated = RequestSupplies::whereIn('id', $request_supplies_ids)
+            ->update([
+                'approved_by_finance' => $user->id,
+                'action_type' => 4
+            ]);
+
+        // Additional updates for specific user role
+        if ($requesting_user->user_role_id == 1) {
+            RequestSupplies::whereIn('id', $request_supplies_ids)->update([
+                'is_purchase_order' => 1,
+                'is_request_purchase_order' => 2
+            ]);
+        }
+
+        if (!$updated) {
+            \DB::rollBack();
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No records were updated. Please check the request IDs.'
+            ]);
+        }
+
+  
+			$approvedRequests = RequestSupplies::whereIn('request_supplies.id', $request_supplies_ids)
+			->join('inventory', 'request_supplies.inventory_id','=','inventory.id')
+			->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
+			->select(
+                'request_supplies.*', 
+                'inventory_name.name' 
+            )
+			->get();
+
+        if ($approvedRequests->isEmpty()) {
+            \DB::rollBack();
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No approved requests found.'
+            ]);
+        }
+
+        // Prepare inventory details for email
+        $inventoryDetails = [];
+        foreach ($approvedRequests as $approvedRequest) {
+            $inventoryDetails[] = [
+          		'name' => $approvedRequest->name ? : 'Unknown Item', 
+                'quantity' => $approvedRequest->request_quantity,
+                'unit_price' => $approvedRequest->inv_unit_price,
+                'total_price' => $approvedRequest->inv_unit_total_price
+            ];
+        }
+
+        // Use the existing request code
+        $requestCode = $approvedRequests->first()->request_supplies_code;
+
+        // Send email to the requesting user
+        Mail::send('emails.finance_approval_notification',
+            ['inventoryDetails' => $inventoryDetails, 'requestCode' => $requestCode],
+            function($message) use ($requesting_user) {
+                $message->to($requesting_user->email)
+                        ->subject('Inventory Request Approved by Finance - ' . date('Y-m-d'));
+            }
+        );
+
+        \DB::commit();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Request Supplies Approved by Finance successfully and notification sent.'
+        ]);
+
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        return response()->json([
+            'status' => 'failed',
+            'message' => 'An error occurred while approving the request or sending notification.',
+            'error' => $e->getMessage(),
+            'line' => $e->getLine()
+        ]);
+    }
 	
 	
 	
@@ -694,7 +743,69 @@ class Finance extends Controller {
 
 public function GetApprovedAllRequest(Request $request)
 {
-    try {
+    // try {
+    //     $gen_user = Auth::id();
+    //     $user = User::find($gen_user);
+
+    //     if (!$user) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => 'User not found.'
+    //         ]);
+    //     }
+
+
+    //     $request_supplies_ids = $request->input('request_supplies_ids', []);
+
+    //     if (!is_array($request_supplies_ids)) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => 'Invalid request data.'
+    //         ]);
+    //     }
+
+
+    //     $flat_ids = collect($request_supplies_ids)->flatten()->unique()->map(function ($id) {
+    //         return intval($id); 
+    //     })->toArray();
+
+    //     if (empty($flat_ids)) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => 'No valid request supplies IDs found.'
+    //         ]);
+    //     }
+
+      
+    //     $updated_requests = RequestSupplies::whereIn('id', $flat_ids)
+    //         ->update([
+    //             'approved_by_finance' => $user->id,
+    //             'action_type' => 4,
+    //             'updated_at' => date('Y-m-d H:i:s') 
+    //         ]);
+
+    //     if ($updated_requests == 0) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => 'No pending requests found to approve.'
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'status' => 'success',
+    //         'message' => 'All selected request supplies approved successfully.'
+    //     ]);
+
+    // } catch (\Exception $e) {
+    //     return response()->json([
+    //         'status' => 'failed',
+    //         'message' => 'An error occurred while approving the requests.',
+    //         'error' => $e->getMessage(),
+    //         'line' => $e->getLine()
+    //     ]);
+    // }
+
+	try {
         $gen_user = Auth::id();
         $user = User::find($gen_user);
 
@@ -705,7 +816,6 @@ public function GetApprovedAllRequest(Request $request)
             ]);
         }
 
-
         $request_supplies_ids = $request->input('request_supplies_ids', []);
 
         if (!is_array($request_supplies_ids)) {
@@ -715,9 +825,8 @@ public function GetApprovedAllRequest(Request $request)
             ]);
         }
 
-
         $flat_ids = collect($request_supplies_ids)->flatten()->unique()->map(function ($id) {
-            return intval($id); 
+            return intval($id);
         })->toArray();
 
         if (empty($flat_ids)) {
@@ -727,30 +836,90 @@ public function GetApprovedAllRequest(Request $request)
             ]);
         }
 
-      
+        // Begin transaction for consistency
+        \DB::beginTransaction();
+
+        // Update all selected requests with finance approval
         $updated_requests = RequestSupplies::whereIn('id', $flat_ids)
             ->update([
                 'approved_by_finance' => $user->id,
                 'action_type' => 4,
-                'updated_at' => date('Y-m-d H:i:s') 
+                'updated_at' => date('Y-m-d H:i:s')
             ]);
 
         if ($updated_requests == 0) {
+            \DB::rollBack();
             return response()->json([
                 'status' => 'failed',
                 'message' => 'No pending requests found to approve.'
             ]);
         }
 
+        // Get all approved requests with details
+		$approvedRequests = RequestSupplies::whereIn('request_supplies.id', $request_supplies_ids)
+		->join('inventory', 'request_supplies.inventory_id','=','inventory.id')
+		->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
+		->select(
+			'request_supplies.*', // Get all request_supplies columns
+			'inventory_name.name' // Explicitly select the name column
+		)
+		->get();
+
+        if ($approvedRequests->isEmpty()) {
+            \DB::rollBack();
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No approved requests found.'
+            ]);
+        }
+
+        // Group requests by requested_by to send one email per user
+        $requestsByUser = $approvedRequests->groupBy('requested_by');
+
+        foreach ($requestsByUser as $requested_by => $userRequests) {
+            $requesting_user = User::find($requested_by);
+
+            if (!$requesting_user) {
+                \DB::rollBack();
+                throw new \Exception("Requesting user ID $requested_by not found.");
+            }
+
+            // Prepare inventory details for this user's requests
+            $inventoryDetails = [];
+            foreach ($userRequests as $approvedRequest) {
+                $inventoryDetails[] = [
+					'name' => $approvedRequest->name ? : 'Unknown Item', 
+                    'quantity' => $approvedRequest->request_quantity,
+                    'unit_price' => $approvedRequest->inv_unit_price,
+                    'total_price' => $approvedRequest->inv_unit_total_price
+                ];
+            }
+
+            // Use the first request's code from the Collection
+            $requestCode = $userRequests[0]->request_supplies_code; // Access first item as array
+
+            // Send email to the requesting user
+            Mail::send('emails.finance_approval_notification',
+                ['inventoryDetails' => $inventoryDetails, 'requestCode' => $requestCode],
+                function($message) use ($requesting_user) {
+                    $message->to($requesting_user->email)
+                            ->subject('Inventory Requests Approved by Finance - ' . date('Y-m-d'));
+                }
+            );
+        }
+
+        \DB::commit();
+
         return response()->json([
             'status' => 'success',
-            'message' => 'All selected request supplies approved successfully.'
+            'message' => 'All selected request supplies approved successfully and notifications sent.'
         ]);
 
     } catch (\Exception $e) {
+        \DB::rollBack();
         return response()->json([
             'status' => 'failed',
-            'message' => 'An error occurred while approving the requests.',
+            'message' => 'An error occurred while approving the requests or sending notifications.',
             'error' => $e->getMessage(),
             'line' => $e->getLine()
         ]);

@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class SchoolPresident extends Controller {
 
@@ -332,29 +333,85 @@ class SchoolPresident extends Controller {
 									$request->request_supplies_ids : 
 									[$request->request_supplies_ids];
 	
-	   
+			// Begin transaction for consistency
+			\DB::beginTransaction();
+	
+			// Update the request supplies with president approval
 			$updated = RequestSupplies::whereIn('id', $request_supplies_ids)
 				->update([
 					'approved_by_president' => $user->id,
 					'action_type' => 3
 				]);
 	
-			if ($updated) {
-				return response()->json([
-					'status' => 'success',
-					'message' => 'Request Supplies Approved successfully.'
-				]);
-			} else {
+			if (!$updated) {
+				\DB::rollBack();
 				return response()->json([
 					'status' => 'failed',
 					'message' => 'No records were updated. Please check the request IDs.'
 				]);
 			}
 	
+			// Get the approved requests with their details
+			$approvedRequests = RequestSupplies::whereIn('request_supplies.id', $request_supplies_ids)
+			->join('inventory', 'request_supplies.inventory_id','=','inventory.id')
+			->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
+			->select(
+                'request_supplies.*', // Get all request_supplies columns
+                'inventory_name.name' // Explicitly select the name column
+            )
+			->get();
+	
+			if ($approvedRequests->isEmpty()) {
+				\DB::rollBack();
+				return response()->json([
+					'status' => 'failed',
+					'message' => 'No approved requests found.'
+				]);
+			}
+	
+			// Get the user who made the request
+			$requestedByUser = User::find($approvedRequests->first()->requested_by);
+			
+			if (!$requestedByUser) {
+				\DB::rollBack();
+				throw new \Exception('Requesting user not found.');
+			}
+	
+			// Prepare inventory details for email
+			$inventoryDetails = [];
+			foreach ($approvedRequests as $approvedRequest) {
+				$inventoryDetails[] = [
+					'name' => $approvedRequest->name ? : 'Unknown Item', 
+					'quantity' => $approvedRequest->request_quantity,
+					'unit_price' => $approvedRequest->inv_unit_price,
+					'total_price' => $approvedRequest->inv_unit_total_price
+				];
+			}
+	
+			
+			$requestCode = $approvedRequests->first()->request_supplies_code;
+	
+		
+			Mail::send('emails.president_approval_notification',
+				['inventoryDetails' => $inventoryDetails, 'requestCode' => $requestCode],
+				function($message) use ($requestedByUser) {
+					$message->to($requestedByUser->email)
+							->subject('Inventory Request Approved by President - ' . date('Y-m-d'));
+				}
+			);
+	
+			\DB::commit();
+	
+			return response()->json([
+				'status' => 'success',
+				'message' => 'Request Supplies Approved by President successfully and notification sent.'
+			]);
+	
 		} catch (\Exception $e) {
+			\DB::rollBack();
 			return response()->json([
 				'status' => 'failed',
-				'message' => 'An error occurred while approving the request.',
+				'message' => 'An error occurred while approving the request or sending notification.',
 				'error' => $e->getMessage(),
 				'line' => $e->getLine()
 			]);
@@ -416,7 +473,69 @@ class SchoolPresident extends Controller {
 
 	public function GetApprovedAllRequest(Request $request)
 {
-    try {
+    // try {
+    //     $gen_user = Auth::id();
+    //     $user = User::find($gen_user);
+
+    //     if (!$user) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => 'User not found.'
+    //         ]);
+    //     }
+
+
+    //     $request_supplies_ids = $request->input('request_supplies_ids', []);
+
+    //     if (!is_array($request_supplies_ids)) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => 'Invalid request data.'
+    //         ]);
+    //     }
+
+
+    //     $flat_ids = collect($request_supplies_ids)->flatten()->unique()->map(function ($id) {
+    //         return intval($id); 
+    //     })->toArray();
+
+    //     if (empty($flat_ids)) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => 'No valid request supplies IDs found.'
+    //         ]);
+    //     }
+
+      
+    //     $updated_requests = RequestSupplies::whereIn('id', $flat_ids)
+    //         ->update([
+    //             'approved_by_president' => $user->id,
+    //             'action_type' => 3,
+    //             'updated_at' => date('Y-m-d H:i:s') 
+    //         ]);
+
+    //     if ($updated_requests == 0) {
+    //         return response()->json([
+    //             'status' => 'failed',
+    //             'message' => 'No pending requests found to approve.'
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'status' => 'success',
+    //         'message' => 'All selected request supplies approved successfully.'
+    //     ]);
+
+    // } catch (\Exception $e) {
+    //     return response()->json([
+    //         'status' => 'failed',
+    //         'message' => 'An error occurred while approving the requests.',
+    //         'error' => $e->getMessage(),
+    //         'line' => $e->getLine()
+    //     ]);
+    // }
+
+	try {
         $gen_user = Auth::id();
         $user = User::find($gen_user);
 
@@ -427,7 +546,6 @@ class SchoolPresident extends Controller {
             ]);
         }
 
-
         $request_supplies_ids = $request->input('request_supplies_ids', []);
 
         if (!is_array($request_supplies_ids)) {
@@ -437,9 +555,8 @@ class SchoolPresident extends Controller {
             ]);
         }
 
-
         $flat_ids = collect($request_supplies_ids)->flatten()->unique()->map(function ($id) {
-            return intval($id); 
+            return intval($id);
         })->toArray();
 
         if (empty($flat_ids)) {
@@ -449,34 +566,96 @@ class SchoolPresident extends Controller {
             ]);
         }
 
-      
+        // Begin transaction for consistency
+        \DB::beginTransaction();
+
+        // Update all selected requests with president approval
         $updated_requests = RequestSupplies::whereIn('id', $flat_ids)
             ->update([
                 'approved_by_president' => $user->id,
                 'action_type' => 3,
-                'updated_at' => date('Y-m-d H:i:s') 
+                'updated_at' => date('Y-m-d H:i:s')
             ]);
 
         if ($updated_requests == 0) {
+            \DB::rollBack();
             return response()->json([
                 'status' => 'failed',
                 'message' => 'No pending requests found to approve.'
             ]);
         }
 
+        // Get all approved requests with details
+		$approvedRequests = RequestSupplies::whereIn('request_supplies.id', $request_supplies_ids)
+		->join('inventory', 'request_supplies.inventory_id','=','inventory.id')
+		->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
+		->select(
+			'request_supplies.*', // Get all request_supplies columns
+			'inventory_name.name' // Explicitly select the name column
+		)
+		->get();
+
+        if ($approvedRequests->isEmpty()) {
+            \DB::rollBack();
+            return response()->json([
+                'status' => 'failed',
+                'message' => 'No approved requests found.'
+            ]);
+        }
+
+        // Group requests by requested_by to send one email per user
+        $requestsByUser = $approvedRequests->groupBy('requested_by');
+
+        foreach ($requestsByUser as $requested_by => $userRequests) {
+            $requesting_user = User::find($requested_by);
+
+            if (!$requesting_user) {
+                \DB::rollBack();
+                throw new \Exception("Requesting user ID $requested_by not found.");
+            }
+
+            // Prepare inventory details for this user's requests
+            $inventoryDetails = [];
+            foreach ($userRequests as $approvedRequest) {
+                $inventoryDetails[] = [
+                    'name' => $approvedRequest->name ? : 'Unknown Item', 
+                    'quantity' => $approvedRequest->request_quantity,
+                    'unit_price' => $approvedRequest->inv_unit_price,
+                    'total_price' => $approvedRequest->inv_unit_total_price
+                ];
+            }
+
+            // Use the first request's code from the Collection
+            $requestCode = $userRequests[0]->request_supplies_code; // Access first item as array
+
+            // Send email to the requesting user
+            Mail::send('emails.president_approval_notification',
+                ['inventoryDetails' => $inventoryDetails, 'requestCode' => $requestCode],
+                function($message) use ($requesting_user) {
+                    $message->to($requesting_user->email)
+                            ->subject('Inventory Requests Approved by President - ' . date('Y-m-d'));
+                }
+            );
+        }
+
+        \DB::commit();
+
         return response()->json([
             'status' => 'success',
-            'message' => 'All selected request supplies approved successfully.'
+            'message' => 'All selected request supplies approved successfully and notifications sent.'
         ]);
 
     } catch (\Exception $e) {
+        \DB::rollBack();
         return response()->json([
             'status' => 'failed',
-            'message' => 'An error occurred while approving the requests.',
+            'message' => 'An error occurred while approving the requests or sending notifications.',
             'error' => $e->getMessage(),
             'line' => $e->getLine()
         ]);
     }
+
+
 }
 
 	

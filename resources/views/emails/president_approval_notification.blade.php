@@ -1,11 +1,8 @@
-@extends('site/layouts/main')
-
-@section('content')
 <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; margin: 0 auto; font-family: Arial, sans-serif;">
-    <!-- Header -->
+
     <tr>
         <td bgcolor="#f8f9fa" style="padding: 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px; color: #333333;">New Inventory Request</h1>
+            <h1 style="margin: 0; font-size: 24px; color: #333333;">Inventory Request Approved by President</h1>
             <p style="margin: 5px 0; font-size: 14px; color: #666666;">Request Code: {{ $requestCode }}</p>
             <p style="margin: 5px 0; font-size: 14px; color: #666666;">Date: {{ date('Y-m-d') }}</p>
         </td>
@@ -14,7 +11,7 @@
     <!-- Main Content -->
     <tr>
         <td bgcolor="#ffffff" style="padding: 20px;">
-            <h3 style="font-size: 18px; color: #333333; margin: 0 0 15px 0; font-weight: bold;">Inventory Request Details</h3>
+            <h3 style="font-size: 18px; color: #333333; margin: 0 0 15px 0; font-weight: bold;">Approved Inventory Details</h3>
             <table width="100%" cellpadding="5" cellspacing="0" border="1" style="border-collapse: collapse;">
                 <thead>
                     <tr bgcolor="#f1f3f5">
@@ -39,12 +36,4 @@
             <p style="margin: 0; font-size: 14px; color: #666666; font-weight: bold;">CUSTODIAN OFFICE TRACK & REQUEST</p>
         </td>
     </tr>
-    <tr>
-        <td bgcolor="#f8f9fa" style="padding: 20px; text-align: center; font-size: 12px; color: #666666;">
-            <p style="margin: 0; font-size:15px;">
-                ANDRES SORIANO COLLEGES OF BISLIG MANGAGOY, BISLIG CITY 
-            </p>
-        </td>
-    </tr>
 </table>
-@endsection

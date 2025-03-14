@@ -6,7 +6,7 @@
     <!-- Header -->
     <tr>
         <td bgcolor="#f8f9fa" style="padding: 20px; text-align: center;">
-            <h1 style="margin: 0; font-size: 24px; color: #333333;">Inventory Request Approved</h1>
+            <h1 style="margin: 0; font-size: 24px; color: #333333;">Inventory Request Approved By Dean</h1>
             <p style="margin: 5px 0; font-size: 14px; color: #666666;">Request Code: {{ $requestCode }}</p>
             <p style="margin: 5px 0; font-size: 14px; color: #666666;">Date: {{ date('Y-m-d') }}</p>
         </td>
@@ -21,8 +21,8 @@
                     <tr bgcolor="#f1f3f5">
                         <th style="padding: 10px; font-size: 14px; color: #333333; text-align: left;">Item Name</th>
                         <th style="padding: 10px; font-size: 14px; color: #333333; text-align: left;">Quantity</th>
-                        {{-- <th style="padding: 10px; font-size: 14px; color: #333333; text-align: left;">Unit Price</th>
-                        <th style="padding: 10px; font-size: 14px; color: #333333; text-align: left;">Total Price</th> --}}
+                        <th style="padding: 10px; font-size: 14px; color: #333333; text-align: left;">Unit Price</th>
+                        <th style="padding: 10px; font-size: 14px; color: #333333; text-align: left;">Total Price</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -30,8 +30,8 @@
                     <tr>
                         <td style="padding: 10px; font-size: 14px; color: #666666;">{{ $item['name'] }}</td>
                         <td style="padding: 10px; font-size: 14px; color: #666666;">{{ $item['quantity'] }}</td>
-                        {{-- <td style="padding: 10px; font-size: 14px; color: #666666;">{{ number_format($item['unit_price'], 2) }}</td>
-                        <td style="padding: 10px; font-size: 14px; color: #666666;">{{ number_format($item['total_price'], 2) }}</td> --}}
+                        <td style="padding: 10px; font-size: 14px; color: #666666;">{{ number_format($item['unit_price'], 2) }}</td>
+                        <td style="padding: 10px; font-size: 14px; color: #666666;">{{ number_format($item['total_price'], 2) }}</td>
                     </tr>
                     @endforeach
                 </tbody>
