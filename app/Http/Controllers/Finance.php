@@ -520,16 +520,18 @@ class Finance extends Controller {
         // Begin transaction for consistency
         \DB::beginTransaction();
 
-        $get_request_supplies = RequestSupplies::whereIn('id', $request_supplies_ids)->first();
-        if (!$get_request_supplies) {
+        // Use get() instead of first() to handle multiple IDs
+        $get_request_supplies = RequestSupplies::whereIn('id', $request_supplies_ids)->get();
+        if ($get_request_supplies->isEmpty()) {
             \DB::rollBack();
             return response()->json([
                 'status' => 'failed',
-                'message' => 'Requested supplies record not found.'
+                'message' => 'Requested supplies records not found.'
             ]);
         }
 
-        $requesting_user = User::find($get_request_supplies->requested_by);
+        // Use the first record to determine the requesting user (assuming all IDs share the same requested_by)
+        $requesting_user = User::find($get_request_supplies->first()->requested_by);
         if (!$requesting_user) {
             \DB::rollBack();
             return response()->json([
@@ -545,12 +547,14 @@ class Finance extends Controller {
                 'action_type' => 4
             ]);
 
-        // Additional updates for specific user role
+        // Additional updates for specific user role (user_role_id == 1)
+        $isPurchaseApproved = false;
         if ($requesting_user->user_role_id == 1) {
             RequestSupplies::whereIn('id', $request_supplies_ids)->update([
                 'is_purchase_order' => 1,
                 'is_request_purchase_order' => 2
             ]);
+            $isPurchaseApproved = true;
         }
 
         if (!$updated) {
@@ -561,15 +565,15 @@ class Finance extends Controller {
             ]);
         }
 
-  
-			$approvedRequests = RequestSupplies::whereIn('request_supplies.id', $request_supplies_ids)
-			->join('inventory', 'request_supplies.inventory_id','=','inventory.id')
-			->join('inventory_name','inventory.inv_name_id','=','inventory_name.id')
-			->select(
-                'request_supplies.*', 
-                'inventory_name.name' 
+        // Fetch approved requests with inventory details
+        $approvedRequests = RequestSupplies::whereIn('request_supplies.id', $request_supplies_ids)
+            ->join('inventory', 'request_supplies.inventory_id', '=', 'inventory.id')
+            ->join('inventory_name', 'inventory.inv_name_id', '=', 'inventory_name.id')
+            ->select(
+                'request_supplies.*',
+                'inventory_name.name'
             )
-			->get();
+            ->get();
 
         if ($approvedRequests->isEmpty()) {
             \DB::rollBack();
@@ -583,7 +587,7 @@ class Finance extends Controller {
         $inventoryDetails = [];
         foreach ($approvedRequests as $approvedRequest) {
             $inventoryDetails[] = [
-          		'name' => $approvedRequest->name ? : 'Unknown Item', 
+                'name' => $approvedRequest->name ?: 'Unknown Item',
                 'quantity' => $approvedRequest->request_quantity,
                 'unit_price' => $approvedRequest->inv_unit_price,
                 'total_price' => $approvedRequest->inv_unit_total_price
@@ -593,20 +597,32 @@ class Finance extends Controller {
         // Use the existing request code
         $requestCode = $approvedRequests->first()->request_supplies_code;
 
-        // Send email to the requesting user
-        Mail::send('emails.finance_approval_notification',
-            ['inventoryDetails' => $inventoryDetails, 'requestCode' => $requestCode],
-            function($message) use ($requesting_user) {
-                $message->to($requesting_user->email)
-                        ->subject('Inventory Request Approved by Finance - ' . date('Y-m-d'));
-            }
-        );
+        // Determine email template and subject based on user role
+        if ($requesting_user->user_role_id == 1 && $isPurchaseApproved) {
+            Mail::send('emails.purchase_approved_notification',
+                ['inventoryDetails' => $inventoryDetails, 'requestCode' => $requestCode],
+                function($message) use ($requesting_user) {
+                    $message->to($requesting_user->email)
+                            ->subject('Purchase Record Request Approved - ' . date('Y-m-d'));
+                }
+            );
+        } else {
+            Mail::send('emails.finance_approval_notification',
+                ['inventoryDetails' => $inventoryDetails, 'requestCode' => $requestCode],
+                function($message) use ($requesting_user) {
+                    $message->to($requesting_user->email)
+                            ->subject('Inventory Request Approved by Finance - ' . date('Y-m-d'));
+                }
+            );
+        }
 
         \DB::commit();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Request Supplies Approved by Finance successfully and notification sent.'
+            'message' => $requesting_user->user_role_id == 1 && $isPurchaseApproved
+                ? 'Purchase record request approved by Finance successfully and notification sent.'
+                : 'Request Supplies Approved by Finance successfully and notification sent.'
         ]);
 
     } catch (\Exception $e) {
@@ -618,7 +634,6 @@ class Finance extends Controller {
             'line' => $e->getLine()
         ]);
     }
-	
 	
 	
 }

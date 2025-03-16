@@ -11,9 +11,21 @@
 		"khanamiryan/qrcode-detector-decoder": "^1.0",
 		"barryvdh/laravel-dompdf": "0.5.*",
 		"phpmailer/phpmailer": "^6.9",
-		"twilio/sdk": "4.10.*",
-		"pear/http_request2": "^2.6"
+		"twilio/sdk": "~4.10",
+		"pear/http_request2": "^2.6",
+		"nexmo/client": "0.4.0",
+        "guzzlehttp/guzzle": "5.3.4"
 	},
+	"repositories": [
+        {
+            "type": "path",
+            "url": "D:/wamp64/www/inventory/vendor_manual/nexmo-client-0.4.0"
+        },
+        {
+            "type": "path",
+            "url": "D:/wamp64/www/inventory/vendor_manual/guzzle-5.3.4"
+        }
+    ],
 	"require-dev": {
 		"phpunit/phpunit": "~4.0",
 		"phpspec/phpspec": "~2.1"
@@ -49,6 +61,7 @@
 		"preferred-install": "dist",
 		"allow-plugins": {
 			"kylekatarnls/update-helper": true
-		}
+		},
+		"process-timeout": 600
 	}
 }

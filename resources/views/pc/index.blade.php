@@ -161,27 +161,37 @@
 });
 
 function checkStatusRequest() {
+    let alertedItems = new Set(); // Track alerted items to prevent duplicates
+
     $.get('pc/check_status_request').then(function(res) {
-        if (res.check_status_request.length !== 0) {
+        if (res.check_status_request.length > 0) {
             $.each(res.check_status_request, function(index, item) {
-                Swal.fire({
-                  title: "Low Inventory Alert",
-                    html: "A purchase request is needed for <b>" + item.item_name + "</b> due to low stock.",
-                    icon: 'info',
-                    confirmButtonText: 'Review Now',
-                    showCancelButton: true,
-                    cancelButtonText: 'Later',
-                    allowOutsideClick: false
-                }).then((result) => {
-                    if (result.isConfirmed) {
-						window.location.href = "{{ url('pc/purchase_order') }}";
-                    }
-                });
+                // Only show alert if quantity is less than 5
+                if (item.quantity < 5 && !alertedItems.has(item.item_name)) {
+                    alertedItems.add(item.item_name);
+                    Swal.fire({
+                        title: "Low Inventory Alert",
+                        html: "A purchase request is needed for <b>" + item.item_name + "</b> due to low stock. Current quantity: " + item.quantity,
+                        icon: 'info',
+                        confirmButtonText: 'Review Now',
+                        showCancelButton: true,
+                        cancelButtonText: 'Later',
+                        allowOutsideClick: false
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = "{{ url('pc/purchase_order') }}";
+                        }
+                    });
+                }
             });
         }
+    }).catch(function(error) {
+        console.error('Error checking status:', error);
     });
 }
 
+// Optional: Add interval to check periodically
+setInterval(checkStatusRequest, 60000); // Runs every 1 minute
 
 
 </script>
