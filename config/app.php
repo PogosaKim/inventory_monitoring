@@ -145,6 +145,8 @@ return [
 		'App\Providers\ConfigServiceProvider',
 		'App\Providers\EventServiceProvider',
 		'App\Providers\RouteServiceProvider',
+		
+		Maatwebsite\Excel\ExcelServiceProvider::class
 
 	],
 
@@ -193,6 +195,7 @@ return [
 		'URL'       => 'Illuminate\Support\Facades\URL',
 		'Validator' => 'Illuminate\Support\Facades\Validator',
 		'View'      => 'Illuminate\Support\Facades\View',
+		'Excel' => Maatwebsite\Excel\Facades\Excel::class,
 		'DNS1D' => Milon\Barcode\Facades\DNS1DFacade::class,
 		'DNS2D' => Milon\Barcode\Facades\DNS2DFacade::class,
 

@@ -20,6 +20,7 @@ use Zxing\QrReader;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PropertyCustodian extends Controller {
 
@@ -466,7 +467,84 @@ public function CheckedStatusRequestData()
 		return view('pc.po_request_data');
 	}
 
-	public function GetForReleaseData()
+	public function import(){
+		return view('pc.import');
+	}
+
+	public function importPostExcel()
+    {
+        if(\Request::hasFile('excelFile')) {
+            $file = \Request::file('excelFile');
+            $data_arr = [];
+            $column_arr = [];
+            \Excel::load($file, function($reader) use(&$data_arr, &$column_arr) {
+                $data_arr[] = $reader->get()->toArray();
+                $column_arr = count($reader->get()->toArray()) > 0 ? str_replace("_"," ", array_keys($reader->get()->toArray()[0])) : [];
+            });
+            
+            $columns = [];
+            foreach($column_arr as $column) {
+                $columns[str_replace(" ","_",$column)] = mb_convert_case($column, MB_CASE_TITLE, "UTF-8");
+            }
+                
+            return response()->json(['data' => $data_arr, 'columns' => $columns]);
+        }
+    } 
+
+	public function importExcel(Request $request)
+    {
+        if (!$request->hasFile('excelFile')) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'No file uploaded'
+            ], 400);
+        }
+
+        $file = $request->file('excelFile');
+        ini_set('max_execution_time', 0);
+
+        try {
+            Excel::load($file, function ($reader) {
+                $data_arr = $reader->get()->toArray();
+
+                foreach ($data_arr as $data) {
+                    // Validate required fields
+                    if (empty($data['inv_name'])) {
+                        continue; // Skip if name is missing
+                    }
+
+                    // Create or get InventoryName
+                    $inventory_name = InventoryName::firstOrCreate(
+                        ['name' => $data['inv_name']],
+                        ['description' => $data['inv_name']? : '']
+                    );
+
+                    // Create Inventory
+                    $inventory = new Inventory();
+                    $inventory->inv_name_id = $inventory_name->id;
+                    $inventory->inv_unit = $data['inv_unit']? : '';
+                    $inventory->inv_quantity = $data['inv_qty']? : 0;
+                    $inventory->inv_brand = $data['inv_brand']? : '';
+                    $inventory->inv_desc = $data['inv_name']? : '';
+                    $inventory->inv_amount = $data['inv_amount']? : 0;
+                    $inventory->inv_total_amount = $data['inv_total_amount']? : 0;
+                    $inventory->inv_location = $data['inv_location']? : '';
+                    $inventory->save();
+                }
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Data imported successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Import failed: ' . $e->getMessage()
+            ], 500);
+        }
+    }	public function GetForReleaseData()
 	{
 		$gen_user = Auth::user()->id;
 

@@ -90,6 +90,11 @@ Route::get('pc/my_request_po_data_form','PropertyCustodian@my_request_po_data_fo
 Route::get('pc/purchase_records','PropertyCustodian@GetPurchaseRecords');
 Route::get('pc/for_po_release_data','PropertyCustodian@GetPurchaseOrderReleaseData'); 
 
+Route::get('pc/import','PropertyCustodian@import');
+Route::post('import/import_excel', 'PropertyCustodian@importExcel');
+Route::post('pc/post_import_data','PropertyCustodian@importPostExcel');
+
+
 
 Route::get('pc/scanner','PropertyCustodian@Scanner');
 Route::get('pc/generate-barcode/{id}', 'PropertyCustodian@generateBarcode');
